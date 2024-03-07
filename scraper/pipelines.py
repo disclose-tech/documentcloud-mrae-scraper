@@ -72,12 +72,29 @@ class BeautifyPipeline:
             if "  " in item["project"]:
                 item["project"] = item["project"].replace("  ", " ")
 
+            remove_at_start = ["Avis sur le ", "Avis sur la", "Avis sur "]
+
+            for start in remove_at_start:
+                if item["project"].lower().startswith(start.lower()):
+                    item["project"] = item["project"][len(start) :]
+
+            item["project"] = item["project"][0].capitalize() + item["project"][1:]
+
         # Petitioner
         item["petitioner"] = item["petitioner"].strip()
 
-        remove_at_start = ["la ", "le ", "l'", "d'", "l’", "d’", "M. le ", "M. le"]
+        remove_at_start = [
+            "la ",
+            "le ",
+            "l'",
+            "d'",
+            "l’",
+            "d’",
+            "M. le ",
+            "M. le",
+        ]
         for start in remove_at_start:
-            if item["petitioner"].startswith(start):
+            if item["petitioner"].lower().startswith(start.lower()):
                 item["petitioner"] = item["petitioner"][len(start) :]
 
         item["petitioner"] = item["petitioner"].strip()

@@ -273,7 +273,7 @@ class MRAESpider(scrapy.Spider):
             petitioner_match = re.search(
                 r"(?:demande|saisine par|porté par|sur saisine(?: conjointe)?|formé par|présenté par)"
                 " {0,2}"
-                "(?:de|du)?"
+                "(?:des?|du)?"
                 " {0,2}"
                 "(.*)"
                 "\n",
