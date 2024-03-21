@@ -46,6 +46,11 @@ class ParseDatePipeline:
                 item["decision_year"] = "ERROR"
                 item["decision_month"] = "ERROR"
                 item["decision_day"] = "ERROR"
+        else:
+            item["decision_date"] = "ERROR"
+            item["decision_year"] = "ERROR"
+            item["decision_month"] = "ERROR"
+            item["decision_day"] = "ERROR"
 
         return item
 
