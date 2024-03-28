@@ -2,12 +2,15 @@
 
 import datetime
 import re
+import os
+from urllib.parse import urlparse
 
 import dateparser
 
-from itemadapter import ItemAdapter
-
+# from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
+
+from .corrections import corrections
 
 
 class ParseDatePipeline:
@@ -26,9 +29,9 @@ class ParseDatePipeline:
 
         item["publication_date"] = publication_dt.strftime("%Y-%m-%d")
         item["publication_time"] = publication_dt.strftime("%H:%M:%S UTC")
-        item["publication_year"] = publication_dt.strftime("%Y")
-        item["publication_month"] = publication_dt.strftime("%m")
-        item["publication_day"] = publication_dt.strftime("%d")
+        # item["publication_year"] = publication_dt.strftime("%Y")
+        # item["publication_month"] = publication_dt.strftime("%m")
+        # item["publication_day"] = publication_dt.strftime("%d")
 
         # Decision date
 
@@ -38,35 +41,81 @@ class ParseDatePipeline:
             )
             if decision_dt:
                 item["decision_date"] = decision_dt.strftime("%Y-%m-%d")
-                item["decision_year"] = decision_dt.strftime("%Y")
-                item["decision_month"] = decision_dt.strftime("%m")
-                item["decision_day"] = decision_dt.strftime("%d")
+                # item["decision_year"] = decision_dt.strftime("%Y")
+                # item["decision_month"] = decision_dt.strftime("%m")
+                # item["decision_day"] = decision_dt.strftime("%d")
             else:
                 item["decision_date"] = "ERROR"
-                item["decision_year"] = "ERROR"
-                item["decision_month"] = "ERROR"
-                item["decision_day"] = "ERROR"
+                # item["decision_year"] = "ERROR"
+                # item["decision_month"] = "ERROR"
+                # item["decision_day"] = "ERROR"
         else:
             item["decision_date"] = "ERROR"
-            item["decision_year"] = "ERROR"
-            item["decision_month"] = "ERROR"
-            item["decision_day"] = "ERROR"
+            # item["decision_year"] = "ERROR"
+            # item["decision_month"] = "ERROR"
+            # item["decision_day"] = "ERROR"
+
+        return item
+
+
+class CategoryPipeline:
+    """Attributes the final category of the document."""
+
+    def process_item(self, item, spider):
+        if item["category_local"] == "Avis conformes":
+            item["category"] = "Cas par cas"
+
+        elif item["category_local"] == "Examen au cas par cas et autres décisions":
+            item["category"] = "Cas par cas"
+
+        elif item["category_local"] in [
+            "Avis rendus sur plans et programmes",
+            "Avis rendus sur projets",
+        ]:
+            item["category"] = "Avis"
+
+        return item
+
+
+class SourceFilenamePipeline:
+    """Adds the source_filename field based on source_file_url."""
+
+    def process_item(self, item, spider):
+
+        path = urlparse(item["source_file_url"]).path
+
+        item["source_filename"] = os.path.basename(path)
 
         return item
 
 
 class BeautifyPipeline:
     def process_item(self, item, spider):
-        """Beautify & harmonize project & title names."""
+        """Beautify & harmonize projects, titles and petitioners."""
 
         # Title
-        if item["title"].startswith("("):
-            item["title"] = item["title"][1:]
+        remove_at_start = ["(", "le ", "la "]
+        for start in remove_at_start:
+            if item["title"].lower().startswith(start):
+                item["title"] = item["title"][len(start) :]
 
-        if item["title"].startswith("la demande"):
-            item["title"] = "Demande" + item["title"][10:]
-        elif item["title"].startswith("demande"):
-            item["title"] = item["title"][0].capitalize() + item["title"][1:]
+        item["title"] = item["title"].strip()
+        item["title"] = item["title"][0].capitalize() + item["title"][1:]
+
+        correct_title_words = ["demande", "formulaire", "annexe"]
+        if not any(word in item["title"].lower() for word in correct_title_words):
+
+            if item["category_local"] == "Avis conformes":
+                item["title"] = "Avis conforme " + item["title"]
+
+            elif item["category_local"] == "Examen au cas par cas et autres décisions":
+                item["title"] = "Décision " + item["title"]
+
+            elif item["category_local"] in [
+                "Avis rendus sur plans et programmes",
+                "Avis rendus sur projets",
+            ]:
+                item["title"] = "Avis " + item["title"]
 
         # Project
         if not item["project"] == "Error":
@@ -77,12 +126,13 @@ class BeautifyPipeline:
             if "  " in item["project"]:
                 item["project"] = item["project"].replace("  ", " ")
 
-            remove_at_start = ["Avis sur le ", "Avis sur la", "Avis sur "]
+            remove_at_start = ["Avis sur le ", "Avis sur la ", "Avis sur "]
 
             for start in remove_at_start:
                 if item["project"].lower().startswith(start.lower()):
                     item["project"] = item["project"][len(start) :]
 
+            item["project"] = item["project"].strip()
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
         # Petitioner
@@ -125,25 +175,6 @@ class BeautifyPipeline:
         return item
 
 
-class CategoryPipeline:
-    """Attributes the final category of the document."""
-
-    def process_item(self, item, spider):
-        if item["category_local"] == "Avis conformes":
-            item["category"] = "Cas par cas"
-
-        elif item["category_local"] == "Examen au cas par cas et autres décisions":
-            item["category"] = "Cas par cas"
-
-        elif item["category_local"] in [
-            "Avis rendus sur plans et programmes",
-            "Avis rendus sur projets",
-        ]:
-            item["category"] = "Avis"
-
-        return item
-
-
 class UploadLimitPipeline:
     """Sends the signal to close the spider once the upload limit is attained."""
 
@@ -158,6 +189,22 @@ class UploadLimitPipeline:
         else:
             spider.upload_limit_attained = True
             raise DropItem("Upload limit exceeded.")
+
+
+class CorrectionsPipeline:
+    """Manually correct problematic documents listed in corrections.py"""
+
+    def process_item(self, item, spider):
+
+        url = item["source_file_url"]
+        if url in corrections:
+            # print(f"Found a correction to do for {url}")
+
+            for k, v in corrections[url].items():
+                # print(f"replacing {k} with value {v}")
+                item[k] = v
+
+        return item
 
 
 class MailPipeline:
@@ -202,7 +249,7 @@ class MailPipeline:
 
             return item_string
 
-        subject = f"MRAE Scraper Addon Run {spider.run_id}"
+        subject = f"MRAE Scraper Addon Run (Errors: {len(self.items_with_error)} | New: {len(self.items_ok)} )"
 
         errors_content = f"ERRORS ({len(self.items_with_error)})\n\n" + "\n\n".join(
             [print_item(item, error=True) for item in self.items_with_error]
@@ -212,7 +259,9 @@ class MailPipeline:
             [print_item(item) for item in self.items_ok]
         )
 
-        content = errors_content + "\n\n" + ok_content
+        start_content = f"MRAE Scraper Addon Run {spider.run_id}"
+
+        content = "\n\n".join([start_content, errors_content, ok_content])
 
         if not spider.dry_run:
             spider.send_mail(subject, content)
@@ -240,18 +289,18 @@ class UploadPipeline:
     """Upload document to DocumentCloud & store event data."""
 
     def process_item(self, item, spider):
-        item["source"] = (
-            f"Published {item['publication_date']} at {item['publication_time']} on mrae.developpement-durable.gouv.fr"
-        )
+        # item["source"] = (
+        #     f"Published {item['publication_date']} at {item['publication_time']} on mrae.developpement-durable.gouv.fr"
+        # )
 
         if not spider.dry_run:
             try:
                 spider.client.documents.upload(
                     item["source_file_url"],
                     project=spider.target_project,
-                    title=item["decision_date"] + " " + item["title"],
+                    title=item["title"],
                     description=item["project"],
-                    source=item["source"],
+                    source="www.mrae.developpement-durable.gouv.fr",
                     language="fra",
                     access=item["access"],
                     data={
@@ -261,16 +310,14 @@ class UploadPipeline:
                         "source_import": "MRAe Scraper",
                         "source_file_url": item["source_file_url"],
                         "source_page_url": item["source_page_url"],
-                        "source_domain": "www.mrae.developpement-durable.gouv.fr",
                         "publication_date": item["publication_date"],
-                        # "publication_timestamp": item["publication_timestamp"],
-                        "publication_year": item["publication_year"],
-                        "publication_month": item["publication_month"],
-                        "publication_day": item["publication_day"],
+                        # "publication_year": item["publication_year"],
+                        # "publication_month": item["publication_month"],
+                        # "publication_day": item["publication_day"],
                         "decision_date": item["decision_date"],
-                        "decision_year": item["decision_year"],
-                        "decision_month": item["decision_month"],
-                        "decision_day": item["decision_day"],
+                        # "decision_year": item["decision_year"],
+                        # "decision_month": item["decision_month"],
+                        # "decision_day": item["decision_day"],
                         "petitioner": item["petitioner"],
                     },
                 )
@@ -284,7 +331,7 @@ class UploadPipeline:
                     "last_seen": now,
                     "run_id": spider.run_id,
                 }
-                # Save event data ?
+                # Save event data
                 if spider.run_id:  # only from the web interface
                     spider.store_event_data(spider.event_data)
 

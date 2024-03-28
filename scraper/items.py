@@ -16,14 +16,15 @@ class DocumentItem(Item):
     category_local = Field()
 
     source_file_url = Field()
+    source_filename = Field()
     source_page_url = Field()
 
     publication_date = Field()
     publication_time = Field()
     publication_timestamp = Field()
-    publication_year = Field()
-    publication_month = Field()
-    publication_day = Field()
+    # publication_year = Field()
+    # publication_month = Field()
+    # publication_day = Field()
     publication_lastmodified = Field()
 
     full_info = Field()
@@ -31,9 +32,9 @@ class DocumentItem(Item):
     decision_date_string = Field()
     decision_date_line = Field()
     decision_date = Field()
-    decision_year = Field()
-    decision_month = Field()
-    decision_day = Field()
+    # decision_year = Field()
+    # decision_month = Field()
+    # decision_day = Field()
 
     petitioner = Field()
 

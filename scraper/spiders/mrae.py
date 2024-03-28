@@ -66,6 +66,7 @@ class MRAESpider(scrapy.Spider):
                     "Examen au cas par cas et autres décisions",
                     "Avis conformes",
                 ]:
+                    # print(f"Following {region}/{category_name}")
                     yield response.follow(
                         category_link,
                         callback=self.parse_category_page,
@@ -367,5 +368,7 @@ class MRAESpider(scrapy.Spider):
             # if the document has been published on our target year
             # or if we are in a page containing only documents for our target year
             yield doc_item
-        else:
-            pass
+        # else:
+        #     print(
+        #         f"Discarded item: {doc_item['title']} ({doc_item['category_local']} | {doc_item['region']}) {doc_item['source_page_url']}"
+        #     )
