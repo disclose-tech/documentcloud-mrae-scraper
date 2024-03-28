@@ -26,17 +26,26 @@ class DiscloseMRAEScraper(AddOn):
         """Check if the user is a verified journalist & can upload a document."""
 
         self.set_message("Checking permissions...")
-        user = self.client.users.get("me")
-        if not user.verified_journalist:
-            self.set_message(
-                "You need to be verified to use this add-on. Please verify your "
-                "account here: https://airtable.com/shrZrgdmuOwW0ZLPM"
-            )
-            self.send_mail(
-                "You must verify your account to use Disclose's Scraper Add-On",
-                "You need to be verified to use the scraper add-on. Please verify your "
-                "account here: https://airtable.com/shrZrgdmuOwW0ZLPM",
-            )
+
+        try:
+            user = self.client.users.get("me")
+
+            if not user.verified_journalist:
+                self.set_message(
+                    "You need to be verified to use this add-on. Please verify your "
+                    "account here: https://airtable.com/shrZrgdmuOwW0ZLPM"
+                )
+                self.send_mail(
+                    "You must verify your account to use Disclose's Scraper Add-On",
+                    "You need to be verified to use the scraper add-on. Please verify your "
+                    "account here: https://airtable.com/shrZrgdmuOwW0ZLPM",
+                )
+
+                sys.exit(1)
+        except Exception as e:
+            subject = f"MRAE Scraper - Error connecting to DocumentCloud"
+            content = f"Error:\n {e.__traceback__}"
+            self.send_mail(subject, content)
             sys.exit(1)
 
     def check_access_level(self):
