@@ -275,7 +275,7 @@ class MRAESpider(scrapy.Spider):
             """Extracts the petitioner from the full info."""
 
             petitioner_match = re.search(
-                r"(?:demande|saisine par|porté par|sur saisine(?: conjointe)?|formé par|présenté par)"
+                r"(?:demande|saisine par|porté par(?: par)?|porté|sur saisine(?: conjointe)?|formé par|présenté par)"
                 " {0,2}"
                 "(?:des?|du)?"
                 " {0,2}"
