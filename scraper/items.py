@@ -21,6 +21,7 @@ class DocumentItem(Item):
 
     publication_date = Field()
     publication_time = Field()
+    publication_datetime = Field()
     publication_timestamp = Field()
     # publication_year = Field()
     # publication_month = Field()

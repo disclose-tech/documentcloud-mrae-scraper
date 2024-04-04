@@ -29,9 +29,9 @@ class ParseDatePipeline:
 
         item["publication_date"] = publication_dt.strftime("%Y-%m-%d")
         item["publication_time"] = publication_dt.strftime("%H:%M:%S UTC")
-        # item["publication_year"] = publication_dt.strftime("%Y")
-        # item["publication_month"] = publication_dt.strftime("%m")
-        # item["publication_day"] = publication_dt.strftime("%d")
+        item["publication_datetime"] = (
+            item["publication_date"] + " " + item["publication_time"]
+        )
 
         # Decision date
 
@@ -41,19 +41,12 @@ class ParseDatePipeline:
             )
             if decision_dt:
                 item["decision_date"] = decision_dt.strftime("%Y-%m-%d")
-                # item["decision_year"] = decision_dt.strftime("%Y")
-                # item["decision_month"] = decision_dt.strftime("%m")
-                # item["decision_day"] = decision_dt.strftime("%d")
+
             else:
                 item["decision_date"] = "ERROR"
-                # item["decision_year"] = "ERROR"
-                # item["decision_month"] = "ERROR"
-                # item["decision_day"] = "ERROR"
+
         else:
             item["decision_date"] = "ERROR"
-            # item["decision_year"] = "ERROR"
-            # item["decision_month"] = "ERROR"
-            # item["decision_day"] = "ERROR"
 
         return item
 
@@ -311,9 +304,8 @@ class UploadPipeline:
                         "source_file_url": item["source_file_url"],
                         "source_page_url": item["source_page_url"],
                         "publication_date": item["publication_date"],
-                        # "publication_year": item["publication_year"],
-                        # "publication_month": item["publication_month"],
-                        # "publication_day": item["publication_day"],
+                        "publication_time": item["publication_time"],
+                        "publication_datetime": item["publication_datetime"],
                         "decision_date": item["decision_date"],
                         # "decision_year": item["decision_year"],
                         # "decision_month": item["decision_month"],
