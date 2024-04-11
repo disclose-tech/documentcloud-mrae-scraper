@@ -342,13 +342,12 @@ class MRAESpider(scrapy.Spider):
                     decision_date_string=decision_date_string,
                     petitioner=petitioner,
                 )
-                if not doc_item["source_file_url"] in self.event_data:
-                    yield response.follow(
-                        doc_link,
-                        method="HEAD",
-                        callback=self.parse_document_headers,
-                        cb_kwargs=dict(doc_item=doc_item, page=page),
-                    )
+                yield response.follow(
+                    doc_link,
+                    method="HEAD",
+                    callback=self.parse_document_headers,
+                    cb_kwargs=dict(doc_item=doc_item, page=page),
+                )
 
     def parse_document_headers(self, response, doc_item, page):
         """Gets the headers of a document to extract its publication date (Last-Modified header)."""

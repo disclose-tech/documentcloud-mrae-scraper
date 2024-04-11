@@ -65,6 +65,7 @@ COOKIES_ENABLED = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
+    "scraper.pipelines.DuplicatesPipeline": 50,
     "scraper.pipelines.ParseDatePipeline": 100,
     "scraper.pipelines.CategoryPipeline": 200,
     "scraper.pipelines.SourceFilenamePipeline": 300,

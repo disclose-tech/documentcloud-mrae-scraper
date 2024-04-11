@@ -13,6 +13,16 @@ from scrapy.exceptions import DropItem
 from .corrections import corrections
 
 
+class DuplicatesPipeline:
+
+    def process_item(self, item, spider):
+
+        if item["source_file_url"] in spider.event_data:
+            raise DropItem
+        else:
+            return item
+
+
 class ParseDatePipeline:
     """Parse dates from scraped data."""
 
@@ -181,6 +191,7 @@ class UploadLimitPipeline:
             return item
         else:
             spider.upload_limit_attained = True
+            print("Upload limit attained. Closing spider...")
             raise DropItem("Upload limit exceeded.")
 
 
@@ -287,47 +298,51 @@ class UploadPipeline:
         # )
 
         if not spider.dry_run:
-            try:
-                spider.client.documents.upload(
-                    item["source_file_url"],
-                    project=spider.target_project,
-                    title=item["title"],
-                    description=item["project"],
-                    source="www.mrae.developpement-durable.gouv.fr",
-                    language="fra",
-                    access=item["access"],
-                    data={
-                        "region": item["region"],
-                        "category": item["category"],
-                        "category_local": item["category_local"],
-                        "source_import": "MRAe Scraper",
-                        "source_file_url": item["source_file_url"],
-                        "source_page_url": item["source_page_url"],
-                        "publication_date": item["publication_date"],
-                        "publication_time": item["publication_time"],
-                        "publication_datetime": item["publication_datetime"],
-                        "decision_date": item["decision_date"],
-                        "petitioner": item["petitioner"],
-                    },
-                )
-            except Exception as e:
-                raise Exception("Upload error").with_traceback(e.__traceback__)
-            else:
-                # No upload error, add to event_data
-                now = datetime.datetime.now().isoformat()
-                spider.event_data[item["source_file_url"]] = {
-                    "headers": item["headers"],
-                    "last_seen": now,
-                    "run_id": spider.run_id,
-                }
-                # Save event data
-                if spider.run_id:  # only from the web interface
-                    spider.store_event_data(spider.event_data)
+
+            if not item["source_file_url"] in spider.event_data:
+
+                try:
+                    spider.client.documents.upload(
+                        item["source_file_url"],
+                        project=spider.target_project,
+                        title=item["title"],
+                        description=item["project"],
+                        source="www.mrae.developpement-durable.gouv.fr",
+                        language="fra",
+                        access=item["access"],
+                        data={
+                            "region": item["region"],
+                            "category": item["category"],
+                            "category_local": item["category_local"],
+                            "source_import": "MRAe Scraper",
+                            "source_file_url": item["source_file_url"],
+                            "source_page_url": item["source_page_url"],
+                            "publication_date": item["publication_date"],
+                            "publication_time": item["publication_time"],
+                            "publication_datetime": item["publication_datetime"],
+                            "decision_date": item["decision_date"],
+                            "petitioner": item["petitioner"],
+                        },
+                    )
+                except Exception as e:
+                    raise Exception("Upload error").with_traceback(e.__traceback__)
+                else:
+                    # No upload error, add to event_data
+                    now = datetime.datetime.now().isoformat()
+                    spider.event_data[item["source_file_url"]] = {
+                        "headers": item["headers"],
+                        "last_seen": now,
+                        # "run_id": spider.run_id,
+                    }
+                    # # Save event data after each upload?
+                    if spider.run_id:  # only from the web interface
+                        spider.store_event_data(spider.event_data)
 
         return item
 
     def close_spider(self, spider):
-        """Update event data when the spider closes."""
+        """Store event data when the spider closes."""
 
         if not spider.dry_run and spider.run_id:
             spider.store_event_data(spider.event_data)
+            print(f"Uploaded event data ({len(spider.event_data)} documents)")

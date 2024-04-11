@@ -112,6 +112,7 @@ class DiscloseMRAEScraper(AddOn):
         self.event_data = self.load_event_data()
         if self.event_data is None:
             self.event_data = {}
+        print(f"Loading event data ({len(self.event_data)} documents)")
 
         # Load scraper settings and create process
 
