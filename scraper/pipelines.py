@@ -246,7 +246,7 @@ class UploadPipeline:
     def open_spider(self, spider):
         documentcloud_logger = logging.getLogger("documentcloud")
         documentcloud_logger.setLevel(logging.WARNING)
-        spider.client.documents.get(24555090)
+
         if not spider.dry_run:
             try:
                 spider.event_data = spider.load_event_data()
