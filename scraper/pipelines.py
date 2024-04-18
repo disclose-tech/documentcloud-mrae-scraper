@@ -13,14 +13,14 @@ from scrapy.exceptions import DropItem
 from .corrections import corrections
 
 
-class DuplicatesPipeline:
+# class DuplicatesPipeline:
 
-    def process_item(self, item, spider):
+#     def process_item(self, item, spider):
 
-        if item["source_file_url"] in spider.event_data:
-            raise DropItem
-        else:
-            return item
+#         if item["source_file_url"] in spider.event_data:
+#             raise DropItem
+#         else:
+#             return item
 
 
 class ParseDatePipeline:
@@ -65,7 +65,11 @@ class CategoryPipeline:
     """Attributes the final category of the document."""
 
     def process_item(self, item, spider):
-        if item["category_local"] == "Avis conformes":
+
+        if "cadrage" in item["title"].lower():
+            item["category"] = "Cadrage"
+
+        elif item["category_local"] == "Avis conformes":
             item["category"] = "Cas par cas"
 
         elif item["category_local"] == "Examen au cas par cas et autres décisions":
@@ -105,7 +109,7 @@ class BeautifyPipeline:
         item["title"] = item["title"].strip()
         item["title"] = item["title"][0].capitalize() + item["title"][1:]
 
-        correct_title_words = ["demande", "formulaire", "annexe"]
+        correct_title_words = ["demande", "formulaire", "annexe", "cadrage"]
         if not any(word in item["title"].lower() for word in correct_title_words):
 
             if item["category_local"] == "Avis conformes":
@@ -129,7 +133,13 @@ class BeautifyPipeline:
             if "  " in item["project"]:
                 item["project"] = item["project"].replace("  ", " ")
 
-            remove_at_start = ["Avis sur le ", "Avis sur la ", "Avis sur "]
+            remove_at_start = [
+                "Avis sur le ",
+                "Avis sur la ",
+                "Avis sur ",
+                "Contribution au cadrage pour le ",
+                "[(",
+            ]
 
             for start in remove_at_start:
                 if item["project"].lower().startswith(start.lower()):
@@ -211,6 +221,99 @@ class CorrectionsPipeline:
         return item
 
 
+class HandleErrorsPipeline:
+    """Pass docs with errors to private"""
+
+    def process_item(self, item, spider):
+
+        if (
+            item["project"] == "Error"
+            or item["petitioner"] == "Error"
+            or item["decision_date_string"] == "ERROR"
+            or item["decision_date"] == "ERROR"
+        ):
+            item["access"] = "private"
+        else:
+            item["access"] = spider.access_level
+
+        return item
+
+
+class UploadPipeline:
+    """Upload document to DocumentCloud & store event data."""
+
+    def open_spider(self, spider):
+        if not spider.dry_run:
+            try:
+                spider.event_data = spider.load_event_data()
+            except Exception as e:
+                raise Exception("Error loading event data").with_traceback(
+                    e.__traceback__
+                )
+                sys.exit(1)
+        else:
+            spider.event_data = None
+
+        if spider.event_data is None:
+            spider.event_data = {}
+
+        spider.logger.info(f"Loaded event data ({len(spider.event_data)} documents)")
+
+    def process_item(self, item, spider):
+
+        if not spider.dry_run:
+            try:
+                spider.client.documents.upload(
+                    item["source_file_url"],
+                    project=spider.target_project,
+                    title=item["title"],
+                    description=item["project"],
+                    source="www.mrae.developpement-durable.gouv.fr",
+                    language="fra",
+                    access=item["access"],
+                    data={
+                        "region": item["region"],
+                        "category": item["category"],
+                        "category_local": item["category_local"],
+                        "source_import": "MRAe Scraper",
+                        "source_file_url": item["source_file_url"],
+                        "source_page_url": item["source_page_url"],
+                        "publication_date": item["publication_date"],
+                        "publication_time": item["publication_time"],
+                        "publication_datetime": item["publication_datetime"],
+                        "decision_date": item["decision_date"],
+                        "petitioner": item["petitioner"],
+                    },
+                )
+            except Exception as e:
+                raise Exception("Upload error").with_traceback(e.__traceback__)
+            else:
+                spider.logger.info(
+                    f"Uploaded {item['source_file_url']} to DocumentCloud"
+                )
+                # No upload error, add to event_data
+                now = datetime.datetime.now().isoformat()
+                spider.event_data[item["source_file_url"]] = {
+                    "headers": item["headers"],
+                    "last_seen": now,
+                    # "run_id": spider.run_id,
+                }
+                # # Save event data after each upload
+                if spider.run_id:  # only from the web interface
+                    spider.store_event_data(spider.event_data)
+
+        return item
+
+    def close_spider(self, spider):
+        """Store event data when the spider closes."""
+
+        if not spider.dry_run and spider.run_id:
+            spider.store_event_data(spider.event_data)
+            spider.logger.info(
+                f"Uploaded event data ({len(spider.event_data)} documents)"
+            )
+
+
 class MailPipeline:
     """Send scraping run report."""
 
@@ -269,80 +372,3 @@ class MailPipeline:
 
         if not spider.dry_run:
             spider.send_mail(subject, content)
-
-
-class HandleErrorsPipeline:
-    """Pass docs with errors to private"""
-
-    def process_item(self, item, spider):
-
-        if (
-            item["project"] == "Error"
-            or item["petitioner"] == "Error"
-            or item["decision_date_string"] == "ERROR"
-            or item["decision_date"] == "ERROR"
-        ):
-            item["access"] = "private"
-        else:
-            item["access"] = spider.access_level
-
-        return item
-
-
-class UploadPipeline:
-    """Upload document to DocumentCloud & store event data."""
-
-    def process_item(self, item, spider):
-        # item["source"] = (
-        #     f"Published {item['publication_date']} at {item['publication_time']} on mrae.developpement-durable.gouv.fr"
-        # )
-
-        if not spider.dry_run:
-
-            if not item["source_file_url"] in spider.event_data:
-
-                try:
-                    spider.client.documents.upload(
-                        item["source_file_url"],
-                        project=spider.target_project,
-                        title=item["title"],
-                        description=item["project"],
-                        source="www.mrae.developpement-durable.gouv.fr",
-                        language="fra",
-                        access=item["access"],
-                        data={
-                            "region": item["region"],
-                            "category": item["category"],
-                            "category_local": item["category_local"],
-                            "source_import": "MRAe Scraper",
-                            "source_file_url": item["source_file_url"],
-                            "source_page_url": item["source_page_url"],
-                            "publication_date": item["publication_date"],
-                            "publication_time": item["publication_time"],
-                            "publication_datetime": item["publication_datetime"],
-                            "decision_date": item["decision_date"],
-                            "petitioner": item["petitioner"],
-                        },
-                    )
-                except Exception as e:
-                    raise Exception("Upload error").with_traceback(e.__traceback__)
-                else:
-                    # No upload error, add to event_data
-                    now = datetime.datetime.now().isoformat()
-                    spider.event_data[item["source_file_url"]] = {
-                        "headers": item["headers"],
-                        "last_seen": now,
-                        # "run_id": spider.run_id,
-                    }
-                    # # Save event data after each upload?
-                    if spider.run_id:  # only from the web interface
-                        spider.store_event_data(spider.event_data)
-
-        return item
-
-    def close_spider(self, spider):
-        """Store event data when the spider closes."""
-
-        if not spider.dry_run and spider.run_id:
-            spider.store_event_data(spider.event_data)
-            print(f"Uploaded event data ({len(spider.event_data)} documents)")

@@ -65,16 +65,16 @@ COOKIES_ENABLED = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "scraper.pipelines.DuplicatesPipeline": 50,
+    # "scraper.pipelines.DuplicatesPipeline": 50,
     "scraper.pipelines.ParseDatePipeline": 100,
     "scraper.pipelines.CategoryPipeline": 200,
     "scraper.pipelines.SourceFilenamePipeline": 300,
     "scraper.pipelines.BeautifyPipeline": 400,
     "scraper.pipelines.UploadLimitPipeline": 500,
     "scraper.pipelines.CorrectionsPipeline": 600,
-    "scraper.pipelines.MailPipeline": 700,
-    "scraper.pipelines.HandleErrorsPipeline": 800,
-    "scraper.pipelines.UploadPipeline": 900,
+    "scraper.pipelines.HandleErrorsPipeline": 700,
+    "scraper.pipelines.UploadPipeline": 800,
+    "scraper.pipelines.MailPipeline": 900,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -116,6 +116,6 @@ HTTPCACHE_EXPIRATION_SECS = 86400  # 1 day
 DEPTH_STATS_VERBOSE = False
 LOG_LEVEL = "INFO"
 # FEEDS = {
-#     # "data.json": {"format": "json", "encoding": "utf8", "indent": 4, "overwrite": True},
+#     #     # "data.json": {"format": "json", "encoding": "utf8", "indent": 4, "overwrite": True},
 #     "data.csv": {"format": "csv", "encoding": "utf8", "overwrite": True},
 # }

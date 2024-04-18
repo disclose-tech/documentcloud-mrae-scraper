@@ -104,16 +104,6 @@ class DiscloseMRAEScraper(AddOn):
         else:
             self.project = ""
 
-        # Event data
-
-        # CLEAR EVENT DATA
-        # self.client.patch(f"addon_events/{self.event_id}/", json={"scratch": None})
-
-        self.event_data = self.load_event_data()
-        if self.event_data is None:
-            self.event_data = {}
-        print(f"Loading event data ({len(self.event_data)} documents)")
-
         # Load scraper settings and create process
 
         os.environ.setdefault("SCRAPY_SETTINGS_MODULE", scraper_settings.__name__)
@@ -131,7 +121,6 @@ class DiscloseMRAEScraper(AddOn):
             dry_run=self.dry_run,
             run_id=self.id,
             send_mail=self.send_mail,
-            event_data=self.event_data,
             load_event_data=self.load_event_data,
             store_event_data=self.store_event_data,
         )
