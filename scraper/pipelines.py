@@ -278,13 +278,15 @@ class UploadPipeline:
                     e.__traceback__
                 )
                 sys.exit(1)
+            else:
+                spider.logger.info(
+                    f"Loaded event data ({len(spider.event_data)} documents)"
+                )
         else:
             spider.event_data = None
-
+            spider.logger.info(f"Not loading event data (dry run)")
         if spider.event_data is None:
             spider.event_data = {}
-
-        spider.logger.info(f"Loaded event data ({len(spider.event_data)} documents)")
 
     def process_item(self, item, spider):
 
