@@ -215,13 +215,15 @@ class MRAESpider(scrapy.Spider):
             """Get the full info from the projectbox, in a clean format.
             Used later to extract petitioner & decision date properly."""
 
-            return "".join(
+            full_info = "".join(
                 [
                     x.strip("\t\r")
                     for x in projectbox.css(" *::text").getall()[1:]
-                    if x.strip()
+                    # if x.strip()
                 ]
-            )
+            ).strip()
+
+            return full_info
 
         def get_decision_date_line(full_info_string):
             """Extract the line with the decision date from the info."""
@@ -265,7 +267,7 @@ class MRAESpider(scrapy.Spider):
                 ")"
                 "-?"
                 "( +|/)?"
-                "(20\d\d)",
+                "(20\d\d)?",
                 decision_date_line,
                 re.IGNORECASE,
             )
@@ -278,16 +280,19 @@ class MRAESpider(scrapy.Spider):
             """Extracts the petitioner from the full info."""
 
             petitioner_match = re.search(
-                r"(?:demande|saisine par|porté par(?: par)?|porté|sur saisine(?: conjointe)?|formé par|présenté par)"
+                r" (?:demande|saisine par|porté(?: par(?: par)?)?|sur saisines?(?: conjointe)?|formé par|présenté par)"
                 " {0,2}"
                 "(?:des?|du)?"
                 " {0,2}"
                 "(.*)"
-                "\n",
+                "(?:\n|Avis du )",
                 full_info_string,
             )
 
             if petitioner_match:
+                # if "Assistance" in petitioner_match.group(1):
+                #     print("Petitioner")
+                #     print(petitioner_match.group(1))
                 return petitioner_match.group(1).strip()
             else:
                 return "ERROR"
