@@ -116,7 +116,11 @@ class BeautifyPipeline:
         """Beautify & harmonize projects, titles and petitioners."""
 
         # Title
-        remove_at_start = ["(", "le ", "la "]
+
+        item["title"] = item["title"].replace(" ", " ").replace("’", "'")
+        item["title"] = item["title"].strip()
+
+        remove_at_start = ["(", "le ", "la ", "à la "]
         for start in remove_at_start:
             if item["title"].lower().startswith(start):
                 item["title"] = item["title"][len(start) :]
@@ -141,14 +145,13 @@ class BeautifyPipeline:
 
         # Project
         if not item["project"] == "Error":
-            if item["project"].endswith("))"):
-                item["project"] = item["project"][:-1]
-            if item["project"].startswith("("):
-                item["project"] = item["project"].lstrip("(")
-            if "  " in item["project"]:
-                item["project"] = item["project"].replace("  ", " ")
+
+            item["project"] = item["project"].replace(" ", " ").replace("’", "'")
+            item["project"] = item["project"].replace("  ", " ")
+            item["project"] = item["project"].strip()
 
             remove_at_start = [
+                "(",
                 "Avis sur le ",
                 "Avis sur la ",
                 "Avis sur ",
@@ -164,16 +167,17 @@ class BeautifyPipeline:
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
         # Petitioner
+        item["petitioner"] = item["petitioner"].replace(" ", " ")
+        item["petitioner"] = item["petitioner"].replace("’", "'")
         item["petitioner"] = item["petitioner"].strip()
 
         remove_at_start = [
             "la ",
             "le ",
+            "par la",
+            "par le",
             "l'",
             "d'",
-            "l’",
-            "d’",
-            "M. le ",
             "M. le",
         ]
         for start in remove_at_start:
