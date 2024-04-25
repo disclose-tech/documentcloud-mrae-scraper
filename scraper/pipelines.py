@@ -228,13 +228,18 @@ class HandleErrorsPipeline:
     def process_item(self, item, spider):
 
         if (
-            item["project"] == "Error"
-            or item["petitioner"] == "Error"
-            or item["decision_date_string"] == "ERROR"
-            or item["decision_date"] == "ERROR"
+            item["project"].lower() == "error"
+            or item["petitioner"].lower() == "error"
+            or item["petitioner"].startswith("Commune (")  # Missing name of commune
+            or item["petitioner"].startswith("Nom du pétitionnaire")
+            or item["decision_date_string"].lower() == "error"
+            or item["decision_date"].lower() == "error"
+            or item["decision_date"][:4] != str(spider.target_year)
         ):
+            item["error"] = True
             item["access"] = "private"
         else:
+            item["error"] = False
             item["access"] = spider.access_level
 
         return item
@@ -327,12 +332,7 @@ class MailPipeline:
 
     def process_item(self, item, spider):
 
-        if (
-            item["project"] == "ERROR"
-            or item["petitioner"] == "ERROR"
-            or item["decision_date_string"] == "ERROR"
-            or item["decision_date"] == "ERROR"
-        ):
+        if item["error"] == True:
             self.items_with_error.append(item)
         else:
             self.items_ok.append(item)

@@ -40,3 +40,5 @@ class DocumentItem(Item):
     petitioner = Field()
 
     headers = Field()
+
+    error = Field()
