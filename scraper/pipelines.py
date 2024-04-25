@@ -47,6 +47,20 @@ class ParseDatePipeline:
         # Decision date
 
         if not item["decision_date_string"] == "ERROR":
+
+            # Is the year there ?
+            year_match = re.search("\d{4}$", item["decision_date_string"])
+
+            if not year_match:
+
+                # print(f"Date with no year: {item['decision_date_string']}")
+                year_in_title_match = re.search("\d{4}", item["title"])
+                # print(
+                #     f"Year found in title: {year_in_title_match.group()} ({item['title']})"
+                # )
+                if year_in_title_match:
+                    item["decision_date_string"] += " " + year_in_title_match.group()
+
             decision_dt = dateparser.parse(
                 item["decision_date_string"], languages=["fr"]
             )
