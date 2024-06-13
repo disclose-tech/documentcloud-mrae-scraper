@@ -303,7 +303,8 @@ class UploadPipeline:
                     language="fra",
                     access=item["access"],
                     data={
-                        "region": item["region"],
+                        "authority": item["authority"],
+                        # "region": item["region"],
                         "category": item["category"],
                         "category_local": item["category_local"],
                         "source_scraper": item["source_scraper"],
@@ -312,6 +313,7 @@ class UploadPipeline:
                         "publication_date": item["publication_date"],
                         "publication_time": item["publication_time"],
                         "publication_datetime": item["publication_datetime"],
+                        "year": item["year"],
                         # "decision_date": item["decision_date"],
                         # "petitioner": item["petitioner"],
                     },
