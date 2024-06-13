@@ -8,13 +8,17 @@ class DocumentItem(Item):
 
     title = Field()
     project = Field()
-    region = Field()
+
     source = Field()
     access = Field()
+
+    authority = Field()
+    # region = Field()
 
     category = Field()
     category_local = Field()
 
+    source_scraper = Field()
     source_file_url = Field()
     source_filename = Field()
     source_page_url = Field()
@@ -22,7 +26,7 @@ class DocumentItem(Item):
     publication_date = Field()
     publication_time = Field()
     publication_datetime = Field()
-    publication_timestamp = Field()
+    # publication_timestamp = Field()
     # publication_year = Field()
     # publication_month = Field()
     # publication_day = Field()
@@ -30,14 +34,15 @@ class DocumentItem(Item):
 
     full_info = Field()
 
-    decision_date_string = Field()
-    decision_date_line = Field()
-    decision_date = Field()
+    year = Field()
+    # decision_date_string = Field()
+    # decision_date_line = Field()
+    # decision_date = Field()
     # decision_year = Field()
     # decision_month = Field()
     # decision_day = Field()
 
-    petitioner = Field()
+    # petitioner = Field()
 
     headers = Field()
 

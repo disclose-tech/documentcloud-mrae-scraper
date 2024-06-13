@@ -6,7 +6,7 @@ import os
 from urllib.parse import urlparse
 import logging
 
-import dateparser
+# import dateparser
 
 # from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
@@ -36,7 +36,7 @@ class ParseDatePipeline:
             item["publication_lastmodified"], "%a, %d %b %Y %H:%M:%S %Z"
         )
 
-        item["publication_timestamp"] = publication_dt.isoformat() + "Z"
+        # item["publication_timestamp"] = publication_dt.isoformat() + "Z"
 
         item["publication_date"] = publication_dt.strftime("%Y-%m-%d")
         item["publication_time"] = publication_dt.strftime("%H:%M:%S UTC")
@@ -46,32 +46,32 @@ class ParseDatePipeline:
 
         # Decision date
 
-        if not item["decision_date_string"] == "ERROR":
+        # if not item["decision_date_string"] == "ERROR":
 
-            # Is the year there ?
-            year_match = re.search("\d{4}$", item["decision_date_string"])
+        #     # Is the year there ?
+        #     year_match = re.search("\d{4}$", item["decision_date_string"])
 
-            if not year_match:
+        #     if not year_match:
 
-                # print(f"Date with no year: {item['decision_date_string']}")
-                year_in_title_match = re.search("\d{4}", item["title"])
-                # print(
-                #     f"Year found in title: {year_in_title_match.group()} ({item['title']})"
-                # )
-                if year_in_title_match:
-                    item["decision_date_string"] += " " + year_in_title_match.group()
+        #         # print(f"Date with no year: {item['decision_date_string']}")
+        #         year_in_title_match = re.search("\d{4}", item["title"])
+        #         # print(
+        #         #     f"Year found in title: {year_in_title_match.group()} ({item['title']})"
+        #         # )
+        #         if year_in_title_match:
+        #             item["decision_date_string"] += " " + year_in_title_match.group()
 
-            decision_dt = dateparser.parse(
-                item["decision_date_string"], languages=["fr"]
-            )
-            if decision_dt:
-                item["decision_date"] = decision_dt.strftime("%Y-%m-%d")
+        #     decision_dt = dateparser.parse(
+        #         item["decision_date_string"], languages=["fr"]
+        #     )
+        #     if decision_dt:
+        #         item["decision_date"] = decision_dt.strftime("%Y-%m-%d")
 
-            else:
-                item["decision_date"] = "ERROR"
+        #     else:
+        #         item["decision_date"] = "ERROR"
 
-        else:
-            item["decision_date"] = "ERROR"
+        # else:
+        #     item["decision_date"] = "ERROR"
 
         return item
 
@@ -113,7 +113,7 @@ class SourceFilenamePipeline:
 
 class BeautifyPipeline:
     def process_item(self, item, spider):
-        """Beautify & harmonize projects, titles and petitioners."""
+        """Beautify & harmonize project names & document titles."""
 
         # Title
 
@@ -166,43 +166,43 @@ class BeautifyPipeline:
             item["project"] = item["project"].strip()
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
-        # Petitioner
-        item["petitioner"] = item["petitioner"].replace(" ", " ")
-        item["petitioner"] = item["petitioner"].replace("’", "'")
-        item["petitioner"] = item["petitioner"].strip()
+        # # Petitioner
+        # item["petitioner"] = item["petitioner"].replace(" ", " ")
+        # item["petitioner"] = item["petitioner"].replace("’", "'")
+        # item["petitioner"] = item["petitioner"].strip()
 
-        remove_at_start = [
-            "la ",
-            "le ",
-            "par la",
-            "par le",
-            "l'",
-            "d'",
-            "M. le",
-        ]
-        for start in remove_at_start:
-            if item["petitioner"].lower().startswith(start.lower()):
-                item["petitioner"] = item["petitioner"][len(start) :]
+        # remove_at_start = [
+        #     "la ",
+        #     "le ",
+        #     "par la",
+        #     "par le",
+        #     "l'",
+        #     "d'",
+        #     "M. le",
+        # ]
+        # for start in remove_at_start:
+        #     if item["petitioner"].lower().startswith(start.lower()):
+        #         item["petitioner"] = item["petitioner"][len(start) :]
 
-        item["petitioner"] = item["petitioner"].strip()
-        item["petitioner"] = item["petitioner"][0].capitalize() + item["petitioner"][1:]
+        # item["petitioner"] = item["petitioner"].strip()
+        # item["petitioner"] = item["petitioner"][0].capitalize() + item["petitioner"][1:]
 
-        if "et de la commune" in item["petitioner"]:
-            item["petitioner"] = item["petitioner"].replace(
-                "et de la commune", "et commune"
-            )
+        # if "et de la commune" in item["petitioner"]:
+        #     item["petitioner"] = item["petitioner"].replace(
+        #         "et de la commune", "et commune"
+        #     )
 
-        delete_after = [" en application de", " après examen au cas par cas"]
-        for d in delete_after:
-            if d in item["petitioner"]:
-                item["petitioner"] = item["petitioner"].split(d)[0]
+        # delete_after = [" en application de", " après examen au cas par cas"]
+        # for d in delete_after:
+        #     if d in item["petitioner"]:
+        #         item["petitioner"] = item["petitioner"].split(d)[0]
 
-        if re.search("de[A-Z]", item["petitioner"]):
-            item["petitioner"] = re.sub(r"de([A-Z])", r"de \1", item["petitioner"])
+        # if re.search("de[A-Z]", item["petitioner"]):
+        #     item["petitioner"] = re.sub(r"de([A-Z])", r"de \1", item["petitioner"])
 
-        item["petitioner"] = (
-            item["petitioner"].replace("( ", "(").replace("  ", " ").rstrip(".,")
-        )
+        # item["petitioner"] = (
+        #     item["petitioner"].replace("( ", "(").replace("  ", " ").rstrip(".,")
+        # )
 
         return item
 
@@ -246,13 +246,14 @@ class HandleErrorsPipeline:
     def process_item(self, item, spider):
 
         if (
-            item["project"].lower() == "error"
-            or item["petitioner"].lower() == "error"
-            or item["petitioner"].startswith("Commune (")  # Missing name of commune
-            or item["petitioner"].startswith("Nom du pétitionnaire")
-            or item["decision_date_string"].lower() == "error"
-            or item["decision_date"].lower() == "error"
-            or item["decision_date"][:4] != str(spider.target_year)
+            item["project"].lower()
+            == "error"
+            # or item["petitioner"].lower() == "error"
+            # or item["petitioner"].startswith("Commune (")  # Missing name of commune
+            # or item["petitioner"].startswith("Nom du pétitionnaire")
+            # or item["decision_date_string"].lower() == "error"
+            # or item["decision_date"].lower() == "error"
+            # or item["decision_date"][:4] != str(spider.target_year)
         ):
             item["error"] = True
             item["access"] = "private"
@@ -270,23 +271,24 @@ class UploadPipeline:
         documentcloud_logger = logging.getLogger("documentcloud")
         documentcloud_logger.setLevel(logging.WARNING)
 
-        if not spider.dry_run:
-            try:
-                spider.event_data = spider.load_event_data()
-            except Exception as e:
-                raise Exception("Error loading event data").with_traceback(
-                    e.__traceback__
-                )
-                sys.exit(1)
+        if hasattr(spider, "dry_run"):  # needed for scrapy shell to work
+            if not spider.dry_run:
+                try:
+                    spider.event_data = spider.load_event_data()
+                except Exception as e:
+                    raise Exception("Error loading event data").with_traceback(
+                        e.__traceback__
+                    )
+                    sys.exit(1)
+                else:
+                    spider.logger.info(
+                        f"Loaded event data ({len(spider.event_data)} documents)"
+                    )
             else:
-                spider.logger.info(
-                    f"Loaded event data ({len(spider.event_data)} documents)"
-                )
-        else:
-            spider.event_data = None
-            spider.logger.info(f"Not loading event data (dry run)")
-        if spider.event_data is None:
-            spider.event_data = {}
+                spider.event_data = None
+                spider.logger.info(f"Not loading event data (dry run)")
+            if spider.event_data is None:
+                spider.event_data = {}
 
     def process_item(self, item, spider):
 
@@ -297,21 +299,21 @@ class UploadPipeline:
                     project=spider.target_project,
                     title=item["title"],
                     description=item["project"],
-                    source="www.mrae.developpement-durable.gouv.fr",
+                    source=item["source"],
                     language="fra",
                     access=item["access"],
                     data={
                         "region": item["region"],
                         "category": item["category"],
                         "category_local": item["category_local"],
-                        "source_import": "MRAe Scraper",
+                        "source_scraper": item["source_scraper"],
                         "source_file_url": item["source_file_url"],
                         "source_page_url": item["source_page_url"],
                         "publication_date": item["publication_date"],
                         "publication_time": item["publication_time"],
                         "publication_datetime": item["publication_datetime"],
-                        "decision_date": item["decision_date"],
-                        "petitioner": item["petitioner"],
+                        # "decision_date": item["decision_date"],
+                        # "petitioner": item["petitioner"],
                     },
                 )
             except Exception as e:
@@ -365,11 +367,9 @@ class MailPipeline:
             item_string = f"""
             title: {item["title"]}
             project: {item["project"]}
-            petitioner: {item["petitioner"]}
-            region: {item["region"]}
+            authority: {item["authority"]}
             category: {item["category"]}
             category_local: {item["category_local"]}
-            decision_date: {item["decision_date"]}
             publication_date: {item["publication_date"]}
             source_file_url: {item["source_file_url"]}
             source_page_url: {item["source_page_url"]}

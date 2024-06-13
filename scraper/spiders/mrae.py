@@ -7,13 +7,12 @@ from scrapy.exceptions import CloseSpider
 
 from ..items import DocumentItem
 
-# DOCUMENT_CATEGORIES = [
-#     "Avis conformes",
-#     "Avis rendus sur plans et programmes",
-#     "Avis rendus sur projets",
-#     "Examen au cas par cas et autres décisions",
-#     "Procès-verbaux de réunion",
-# ]  # TO DO: targets
+DOCUMENT_CATEGORIES = [
+    "Avis rendus sur projets",
+    "Avis rendus sur plans et programmes",
+    "Examen au cas par cas et autres décisions",
+    "Avis conformes",
+]
 
 
 class MRAESpider(scrapy.Spider):
@@ -62,13 +61,8 @@ class MRAESpider(scrapy.Spider):
                 ):
                     category_name = "Examen au cas par cas et autres décisions"
 
-                if category_name in [
-                    "Avis rendus sur projets",
-                    "Avis rendus sur plans et programmes",
-                    "Examen au cas par cas et autres décisions",
-                    "Avis conformes",
-                ]:
-                    # print(f"Following {region}/{category_name}")
+                if category_name in DOCUMENT_CATEGORIES:
+
                     yield response.follow(
                         category_link,
                         callback=self.parse_category_page,
@@ -120,6 +114,8 @@ class MRAESpider(scrapy.Spider):
                     return True
                 else:
                     return False
+
+        self.logger.info(f"Scraping {region} / {category_local}")
 
         cards_list = response.css(".liste-articles .fr-card__body")
 
@@ -213,7 +209,7 @@ class MRAESpider(scrapy.Spider):
 
         def get_full_info(projectbox):
             """Get the full info from the projectbox, in a clean format.
-            Used later to extract petitioner & decision date properly."""
+            Cab be used to later extract petitioner & decision date properly."""
 
             full_info = "".join(
                 [
@@ -334,25 +330,48 @@ class MRAESpider(scrapy.Spider):
                         project = get_project_name(preceding_p)
                         full_info = get_full_info(preceding_p)
 
-                decision_date_line = get_decision_date_line(full_info)
-                decision_date_string = get_decision_date_string(decision_date_line)
-                petitioner = get_petitioner(full_info)
+                # decision_date_line = get_decision_date_line(full_info)
+                # decision_date_string = get_decision_date_string(decision_date_line)
+                # petitioner = get_petitioner(full_info)
 
                 doc_item = DocumentItem(
                     title=doc_name,
                     project=project,
-                    region=region,
+                    # region=region,
+                    authority=f"MRAe {region}",
                     category_local=category_local,
                     source_file_url=response.urljoin(doc_link),
                     source_page_url=response.request.url,
                     full_info=full_info,
-                    decision_date_line=decision_date_line,
-                    decision_date_string=decision_date_string,
-                    petitioner=petitioner,
+                    # decision_date_line=decision_date_line,
+                    # decision_date_string=decision_date_string,
+                    # petitioner=petitioner,
+                    source="www.mrae.developpement-durable.gouv.fr",
+                    source_scraper="MRAe Scraper",
                 )
 
-                if not doc_item["source_file_url"] in self.event_data:
+                # Check if the doc matches the target year
+                if len(re.findall(r"20\d\d", page)) != 1:  # multi-year page
+                    previous_h2 = (
+                        parent.xpath("./preceding-sibling::h2")[-1].css("::text").get()
+                    )
 
+                    if str(self.target_year) in previous_h2:
+                        target_year_match = True
+                    else:
+                        target_year_match = False
+                        # print(
+                        #     f"Discarded item on multi-year page: {doc_item['title']} | {doc_item['source_page_url']}"
+                        # )
+                else:
+                    target_year_match = True
+
+                if (
+                    target_year_match
+                    and not doc_item["source_file_url"] in self.event_data
+                ):
+
+                    doc_item["year"] = self.target_year
                     yield response.follow(
                         doc_link,
                         method="HEAD",
@@ -374,11 +393,13 @@ class MRAESpider(scrapy.Spider):
 
         dt = datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
 
-        if dt.year == self.target_year or len(re.findall(r"20\d\d", page)) == 1:
-            # if the document has been published on our target year
-            # or if we are in a page containing only documents for our target year
-            yield doc_item
+        yield doc_item
+
+        # if dt.year == self.target_year or len(re.findall(r"20\d\d", page)) == 1:  # TODO
+        #     # if the document has been published on our target year
+        #     # or if we are in a page containing only documents for our target year
+        #     yield doc_item
         # else:
         #     print(
-        #         f"Discarded item: {doc_item['title']} ({doc_item['category_local']} | {doc_item['region']}) {doc_item['source_page_url']}"
+        #         f"Discarded item: {doc_item['title']} ({doc_item['category_local']} | {doc_item['authority']}) {doc_item['source_page_url']}"
         #     )
