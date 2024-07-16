@@ -148,22 +148,24 @@ class BeautifyPipeline:
 
             item["project"] = item["project"].replace(" ", " ").replace("’", "'")
             item["project"] = item["project"].replace("  ", " ")
+
+            # remove_at_start = [
+            #     "(",
+            #     "Avis sur le ",
+            #     "Avis sur sur le ",
+            #     "Avis sur la ",
+            #     "Avis sur sur la ",
+            #     "Avis sur ",
+            #     "Contribution au cadrage pour le ",
+            #     "[(",
+            # ]
+
+            # for start in remove_at_start:
+            #     if item["project"].lower().startswith(start.lower()):
+            #         item["project"] = item["project"][len(start) :]
+
             item["project"] = item["project"].strip()
-
-            remove_at_start = [
-                "(",
-                "Avis sur le ",
-                "Avis sur la ",
-                "Avis sur ",
-                "Contribution au cadrage pour le ",
-                "[(",
-            ]
-
-            for start in remove_at_start:
-                if item["project"].lower().startswith(start.lower()):
-                    item["project"] = item["project"][len(start) :]
-
-            item["project"] = item["project"].strip()
+            item["project"] = item["project"].rstrip(".")
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
         # # Petitioner
