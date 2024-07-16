@@ -306,6 +306,9 @@ class MRAESpider(scrapy.Spider):
                 doc_link = fc.css(".fr-download__link").attrib["href"]
                 parent = fc.xpath("./..")
 
+                if parent.xpath("name()").get() == "strong":
+                    parent = parent.xpath("./..")
+
                 if parent.css(".texte-article"):
                     # Missing projectbox
                     preceding_p = fc.xpath("./preceding-sibling::p")[-1]
