@@ -283,9 +283,11 @@ class UploadPipeline:
                     )
                     sys.exit(1)
                 else:
-                    spider.logger.info(
-                        f"Loaded event data ({len(spider.event_data)} documents)"
-                    )
+                    if spider.event_data:
+                        count = len(spider.event_data)
+                    else:
+                        count = 0
+                    spider.logger.info(f"Loaded event data ({count} documents)")
             else:
                 spider.event_data = None
                 spider.logger.info(f"Not loading event data (dry run)")
@@ -344,9 +346,12 @@ class UploadPipeline:
 
         if not spider.dry_run and spider.run_id:
             spider.store_event_data(spider.event_data)
-            spider.logger.info(
-                f"Uploaded event data ({len(spider.event_data)} documents)"
-            )
+            if spider.event_data:
+                count = len(spider.event_data)
+            else:
+                count = 0
+
+            spider.logger.info(f"Uploaded event data ({count} documents)")
 
 
 class MailPipeline:
