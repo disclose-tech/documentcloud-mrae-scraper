@@ -327,7 +327,7 @@ class UploadPipeline:
                 # No upload error, add to event_data
                 now = datetime.datetime.now().isoformat()
                 spider.event_data[item["source_file_url"]] = {
-                    "headers": item["headers"],
+                    "last_modified": item["publication_lastmodified"],
                     "last_seen": now,
                     # "run_id": spider.run_id,
                 }
