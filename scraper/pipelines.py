@@ -317,7 +317,7 @@ class UploadPipeline:
                         "publication_date": item["publication_date"],
                         "publication_time": item["publication_time"],
                         "publication_datetime": item["publication_datetime"],
-                        "year": item["year"],
+                        "year": str(item["year"]),
                         # "decision_date": item["decision_date"],
                         # "petitioner": item["petitioner"],
                     },

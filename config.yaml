@@ -27,13 +27,7 @@ properties:
     type: boolean
     description: If true, documents are not uploaded, and event data is not updated.
     default: false
-  # urls:
-  #   type: array
-  #   default: [""]
-  #   items:
-  #     title: URL
-  #     type: string
-  #     format: uri
+ 
 required: 
   - project
 categories: 
