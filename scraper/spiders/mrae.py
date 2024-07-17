@@ -115,7 +115,7 @@ class MRAESpider(scrapy.Spider):
                 else:
                     return False
 
-        self.logger.info(f"Scraping {region} / {category_local}")
+        self.logger.info(f"Scraping {region} / {category_local} {self.target_year}")
 
         cards_list = response.css(".liste-articles .fr-card__body")
 
