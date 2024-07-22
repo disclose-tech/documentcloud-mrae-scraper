@@ -158,10 +158,9 @@ class MRAESpider(scrapy.Spider):
                     "est soumis",
                     "soumis",
                     "sont soumis",
-                    "",
-                    "\n",
                     'Avis conforme délibéré après examen au cas par cas "ad hoc"',
                     '(Avis conforme délibéré après examen au cas par cas "ad hoc"',
+                    "dispense",
                 ]
             ]
             project_name = None
@@ -178,6 +177,12 @@ class MRAESpider(scrapy.Spider):
 
                 lines = [x.strip() for x in lines if x.strip()]
 
+                if (
+                    lines[0].strip()
+                    == 'Avis conforme délibéré après examen au cas par cas "ad hoc"'
+                ):
+                    lines = lines[1:]
+
                 project_name = lines[0].strip()  # get the first line only
 
                 for line in lines[1:]:
@@ -185,7 +190,10 @@ class MRAESpider(scrapy.Spider):
                     # or finish with the department number
                     if line[0].islower() or (
                         re.search(r" \((\d\d\d?|2A|2B)\)$", line)
-                        and not line.startswith("Avis")
+                        and not (
+                            line.startswith("Avis")
+                            or line.startswith("Dossier étudié à la demande")
+                        )
                     ):
                         project_name += " " + line
                     else:
@@ -311,9 +319,15 @@ class MRAESpider(scrapy.Spider):
 
                 if parent.css(".texte-article"):
                     # Missing projectbox
-                    preceding_p = fc.xpath("./preceding-sibling::p")[-1]
-                    project = get_project_name(preceding_p)
-                    full_info = get_full_info(preceding_p)
+                    try:
+                        preceding_p = fc.xpath("./preceding-sibling::p")[-1]
+                        project = get_project_name(preceding_p)
+                        full_info = get_full_info(preceding_p)
+                    except IndexError:
+                        self.logger.warning(
+                            f"Could not find projectbox for doc {doc_name} on {response.request.url}"
+                        )
+                        yield
 
                 else:
                     projectbox = parent
@@ -326,9 +340,12 @@ class MRAESpider(scrapy.Spider):
                         # Malformed projectbox
                         # e.g. https://www.mrae.developpement-durable.gouv.fr/avis-rendus-sur-projets-de-la-mrae-corse-en-2023-a1202.html
                         # Get last p containing a strong tag preceding the filebox
-                        preceding_p = fc.xpath(
+
+                        preceding_p_tags = fc.xpath(
                             "./preceding-sibling::p[strong[not(re:test(text(),' *(est )?soumis'))]]"
-                        )[-1]
+                        )
+
+                        preceding_p = preceding_p_tags[-1]
                         # Get project name from this p
                         project = get_project_name(preceding_p)
                         full_info = get_full_info(preceding_p)
