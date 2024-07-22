@@ -120,6 +120,18 @@ class BeautifyPipeline:
         item["title"] = item["title"].replace(" ", " ").replace("’", "'")
         item["title"] = item["title"].strip()
 
+        # Missing "demande de" / "demande de la"
+
+        if (
+            item["title"].startswith("l'établissement public")
+            or item["title"].startswith("la commune d")
+            or item["title"].startswith("la communauté d'agglo")
+        ):
+            item["title"] = "Demande de " + item["title"]
+
+        if item["title"].lower().startswith("commune d"):
+            item["title"] = "Demande de la " + item["title"]
+
         remove_at_start = ["(", "le ", "la ", "à la "]
         for start in remove_at_start:
             if item["title"].lower().startswith(start):
@@ -128,7 +140,21 @@ class BeautifyPipeline:
         item["title"] = item["title"].strip()
         item["title"] = item["title"][0].capitalize() + item["title"][1:]
 
-        correct_title_words = ["demande", "formulaire", "annexe", "cadrage"]
+        correct_title_words = [
+            "avis",
+            "demande",
+            "formulaire",
+            "cerfa",
+            "décision" "annexe",
+            "cadrage",
+            "auto-évaluation",
+            "rapport",
+            "réponse",
+            "courrier",
+            "localisation",
+            "rejet",
+            "note",
+        ]
         if not any(word in item["title"].lower() for word in correct_title_words):
 
             if item["category_local"] == "Avis conformes":
@@ -148,24 +174,20 @@ class BeautifyPipeline:
 
             item["project"] = item["project"].replace(" ", " ").replace("’", "'")
             item["project"] = item["project"].replace("  ", " ")
+            item["project"] = item["project"].replace("))", ")")
+            item["project"] = item["project"].replace("((", "(")
 
-            # remove_at_start = [
-            #     "(",
-            #     "Avis sur le ",
-            #     "Avis sur sur le ",
-            #     "Avis sur la ",
-            #     "Avis sur sur la ",
-            #     "Avis sur ",
-            #     "Contribution au cadrage pour le ",
-            #     "[(",
-            # ]
+            remove_at_start = [
+                "(",
+                "[(",
+            ]
 
-            # for start in remove_at_start:
-            #     if item["project"].lower().startswith(start.lower()):
-            #         item["project"] = item["project"][len(start) :]
+            for start in remove_at_start:
+                if item["project"].lower().startswith(start.lower()):
+                    item["project"] = item["project"][len(start) :]
 
             item["project"] = item["project"].strip()
-            item["project"] = item["project"].rstrip(".")
+            item["project"] = item["project"].rstrip(".}")
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
         # # Petitioner
