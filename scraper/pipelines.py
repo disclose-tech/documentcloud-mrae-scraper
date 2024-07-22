@@ -347,7 +347,7 @@ class UploadPipeline:
             except Exception as e:
                 raise Exception("Upload error").with_traceback(e.__traceback__)
             else:
-                spider.logger.info(
+                spider.logger.debug(
                     f"Uploaded {item['source_file_url']} to DocumentCloud"
                 )
                 # No upload error, add to event_data
