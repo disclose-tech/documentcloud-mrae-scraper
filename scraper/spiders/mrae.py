@@ -19,7 +19,7 @@ class MRAESpider(scrapy.Spider):
 
     name = "MRAE_spider"
 
-    allowed_domains = ["www.mrae.developpement-durable.gouv.fr"]
+    # allowed_domains = ["www.mrae.developpement-durable.gouv.fr"]
 
     start_urls = [
         "https://www.mrae.developpement-durable.gouv.fr/les-mrae-r37.html?lang=fr"
