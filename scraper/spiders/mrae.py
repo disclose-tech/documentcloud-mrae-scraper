@@ -283,7 +283,6 @@ class MRAESpider(scrapy.Spider):
                     source_page_url=response.request.url,
                     full_info=full_info,
                     source="www.mrae.developpement-durable.gouv.fr",
-                    source_scraper="MRAe Scraper",
                 )
 
                 # Check if the doc matches the target year
