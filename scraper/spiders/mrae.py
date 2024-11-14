@@ -213,93 +213,17 @@ class MRAESpider(scrapy.Spider):
             if year:
                 return int(year)
             else:
-                print("PROBLEM: year not inferred from docname")
+                self.logger.error("ERROR: year not inferred from docname")
 
         def get_full_info(projectbox):
             """Get the full info from the projectbox, in a clean format.
-            Cab be used to later extract petitioner & decision date properly."""
+            Can be used to later extract petitioner & decision date properly."""
 
             full_info = "".join(
-                [
-                    x.strip("\t\r")
-                    for x in projectbox.css(" *::text").getall()[1:]
-                    # if x.strip()
-                ]
+                [x.strip("\t\r") for x in projectbox.css(" *::text").getall()[1:]]
             ).strip()
 
             return full_info
-
-        def get_decision_date_line(full_info_string):
-            """Extract the line with the decision date from the info."""
-
-            decision_date_match = re.search(
-                r"("
-                "(Avis|avis|avis de la MRAe)"
-                "( délégué| conforme| tacite| favorable| défavorable| sur projets?| sur cadrage préalable de projet)?"
-                "( de dispense| de soumission| délibérés?)?"
-                "|Décision( délibérée| déléguée)?"
-                "|Absence de décision"
-                "|Absence d’avis"
-                "|Contribution au cadrage"
-                ")"
-                " {0,2}"
-                "(du)?"
-                " {0,2}"
-                "(le)?"
-                " {0,2}"
-                "(1er|\d?\d)"
-                ".*"
-                "(\n|$)",
-                full_info_string,
-            )
-
-            if decision_date_match:
-                date_line = decision_date_match.group()
-                return date_line
-            else:
-                return "ERROR"
-
-        def get_decision_date_string(decision_date_line):
-            """Extracts the string of the decision date from the line containing it."""
-
-            date_match = re.search(
-                r"(1er|\d?\d)"
-                "( +|/)?"
-                "("
-                "(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)"
-                "|\d\d"
-                ")"
-                "-?"
-                "( +|/)?"
-                "(20\d\d)?",
-                decision_date_line,
-                re.IGNORECASE,
-            )
-            if date_match:
-                return date_match.group()
-            else:
-                return "ERROR"
-
-        def get_petitioner(full_info_string):
-            """Extracts the petitioner from the full info."""
-
-            petitioner_match = re.search(
-                r" (?:demande|saisine par|porté(?: par(?: par)?)?|sur saisines?(?: conjointe)?|formé par|présenté par)"
-                " {0,2}"
-                "(?:des?|du)?"
-                " {0,2}"
-                "(.*)"
-                "(?:\n|Avis du )",
-                full_info_string,
-            )
-
-            if petitioner_match:
-                # if "Assistance" in petitioner_match.group(1):
-                #     print("Petitioner")
-                #     print(petitioner_match.group(1))
-                return petitioner_match.group(1).strip()
-            else:
-                return "ERROR"
 
         # Main fuction
 
@@ -350,22 +274,14 @@ class MRAESpider(scrapy.Spider):
                         project = get_project_name(preceding_p)
                         full_info = get_full_info(preceding_p)
 
-                # decision_date_line = get_decision_date_line(full_info)
-                # decision_date_string = get_decision_date_string(decision_date_line)
-                # petitioner = get_petitioner(full_info)
-
                 doc_item = DocumentItem(
                     title=doc_name,
                     project=project,
-                    # region=region,
                     authority=f"MRAe {region}",
                     category_local=category_local,
                     source_file_url=response.urljoin(doc_link),
                     source_page_url=response.request.url,
                     full_info=full_info,
-                    # decision_date_line=decision_date_line,
-                    # decision_date_string=decision_date_string,
-                    # petitioner=petitioner,
                     source="www.mrae.developpement-durable.gouv.fr",
                     source_scraper="MRAe Scraper",
                 )
@@ -380,9 +296,9 @@ class MRAESpider(scrapy.Spider):
                         target_year_match = True
                     else:
                         target_year_match = False
-                        # print(
-                        #     f"Discarded item on multi-year page: {doc_item['title']} | {doc_item['source_page_url']}"
-                        # )
+                        self.logger.debug(
+                            f"Discarded item on multi-year page: {doc_item['title']} | {doc_item['source_page_url']}"
+                        )
                 else:
                     target_year_match = True
 
@@ -414,12 +330,3 @@ class MRAESpider(scrapy.Spider):
         dt = datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
 
         yield doc_item
-
-        # if dt.year == self.target_year or len(re.findall(r"20\d\d", page)) == 1:  # TODO
-        #     # if the document has been published on our target year
-        #     # or if we are in a page containing only documents for our target year
-        #     yield doc_item
-        # else:
-        #     print(
-        #         f"Discarded item: {doc_item['title']} ({doc_item['category_local']} | {doc_item['authority']}) {doc_item['source_page_url']}"
-        #     )

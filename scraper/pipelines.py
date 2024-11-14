@@ -6,22 +6,9 @@ import os
 from urllib.parse import urlparse
 import logging
 
-# import dateparser
-
-# from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
 from .corrections import corrections
-
-
-# class DuplicatesPipeline:
-
-#     def process_item(self, item, spider):
-
-#         if item["source_file_url"] in spider.event_data:
-#             raise DropItem
-#         else:
-#             return item
 
 
 class ParseDatePipeline:
@@ -43,35 +30,6 @@ class ParseDatePipeline:
         item["publication_datetime"] = (
             item["publication_date"] + " " + item["publication_time"]
         )
-
-        # Decision date
-
-        # if not item["decision_date_string"] == "ERROR":
-
-        #     # Is the year there ?
-        #     year_match = re.search("\d{4}$", item["decision_date_string"])
-
-        #     if not year_match:
-
-        #         # print(f"Date with no year: {item['decision_date_string']}")
-        #         year_in_title_match = re.search("\d{4}", item["title"])
-        #         # print(
-        #         #     f"Year found in title: {year_in_title_match.group()} ({item['title']})"
-        #         # )
-        #         if year_in_title_match:
-        #             item["decision_date_string"] += " " + year_in_title_match.group()
-
-        #     decision_dt = dateparser.parse(
-        #         item["decision_date_string"], languages=["fr"]
-        #     )
-        #     if decision_dt:
-        #         item["decision_date"] = decision_dt.strftime("%Y-%m-%d")
-
-        #     else:
-        #         item["decision_date"] = "ERROR"
-
-        # else:
-        #     item["decision_date"] = "ERROR"
 
         return item
 
@@ -190,44 +148,6 @@ class BeautifyPipeline:
             item["project"] = item["project"].rstrip(".}")
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
 
-        # # Petitioner
-        # item["petitioner"] = item["petitioner"].replace(" ", " ")
-        # item["petitioner"] = item["petitioner"].replace("’", "'")
-        # item["petitioner"] = item["petitioner"].strip()
-
-        # remove_at_start = [
-        #     "la ",
-        #     "le ",
-        #     "par la",
-        #     "par le",
-        #     "l'",
-        #     "d'",
-        #     "M. le",
-        # ]
-        # for start in remove_at_start:
-        #     if item["petitioner"].lower().startswith(start.lower()):
-        #         item["petitioner"] = item["petitioner"][len(start) :]
-
-        # item["petitioner"] = item["petitioner"].strip()
-        # item["petitioner"] = item["petitioner"][0].capitalize() + item["petitioner"][1:]
-
-        # if "et de la commune" in item["petitioner"]:
-        #     item["petitioner"] = item["petitioner"].replace(
-        #         "et de la commune", "et commune"
-        #     )
-
-        # delete_after = [" en application de", " après examen au cas par cas"]
-        # for d in delete_after:
-        #     if d in item["petitioner"]:
-        #         item["petitioner"] = item["petitioner"].split(d)[0]
-
-        # if re.search("de[A-Z]", item["petitioner"]):
-        #     item["petitioner"] = re.sub(r"de([A-Z])", r"de \1", item["petitioner"])
-
-        # item["petitioner"] = (
-        #     item["petitioner"].replace("( ", "(").replace("  ", " ").rstrip(".,")
-        # )
-
         return item
 
 
@@ -330,7 +250,6 @@ class UploadPipeline:
                     access=item["access"],
                     data={
                         "authority": item["authority"],
-                        # "region": item["region"],
                         "category": item["category"],
                         "category_local": item["category_local"],
                         "event_data_key": item["source_file_url"],
@@ -342,8 +261,6 @@ class UploadPipeline:
                         "publication_time": item["publication_time"],
                         "publication_datetime": item["publication_datetime"],
                         "year": str(item["year"]),
-                        # "decision_date": item["decision_date"],
-                        # "petitioner": item["petitioner"],
                     },
                 )
             except Exception as e:
