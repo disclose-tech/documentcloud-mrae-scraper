@@ -3,6 +3,10 @@ description: Custom scraper for mrae.developpement-durable.gouv.fr
 instructions: ''
 type: object
 properties:
+  run_name: 
+    title: Run name
+    type: string
+    description: Name to identify this run among others on DocumentCloud's interface
   project:
     title: Project
     type: string
@@ -27,7 +31,6 @@ properties:
     type: boolean
     description: If true, documents are not uploaded, and event data is not updated.
     default: false
- 
 required: 
   - project
 categories: 
