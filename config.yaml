@@ -36,7 +36,7 @@ required:
 categories: 
   - monitor
 eventOptions:
-  name: target_year
+  name: run_name
   events:
     - hourly
     - daily
