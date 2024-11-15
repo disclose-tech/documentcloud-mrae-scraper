@@ -297,12 +297,22 @@ class UploadPipeline:
 
         if not spider.dry_run and spider.run_id:
             spider.store_event_data(spider.event_data)
-            if spider.event_data:
-                count = len(spider.event_data)
-            else:
-                count = 0
+            spider.logger.info(
+                f"Uploaded event data ({len(spider.event_data)} documents)"
+            )
 
-            spider.logger.info(f"Uploaded event data ({count} documents)")
+            if spider.upload_event_data:
+                # Upload the event_data to the DocumentCloud interface
+                now = datetime.datetime.now()
+                timestamp = now.strftime("%Y%m%d_%H%M")
+                filename = f"event_data_IGEDD_{timestamp}.json"
+
+                with open(filename, "w+") as event_data_file:
+                    json.dump(spider.event_data, event_data_file)
+                    spider.upload_file(event_data_file)
+                spider.logger.info(
+                    f"Uploaded event data to the Documentcloud interface."
+                )
 
         if not spider.run_id:
             with open("event_data.json", "w") as file:

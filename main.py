@@ -93,6 +93,8 @@ class DiscloseMRAEScraper(AddOn):
 
         self.dry_run = self.data.get("dry_run")
 
+        self.upload_event_data = self.data.get("upload_event_data")
+
         if not self.dry_run:
             try:
                 self.project = self.get_project_id()  # commented for development
@@ -126,6 +128,8 @@ class DiscloseMRAEScraper(AddOn):
             send_mail=self.send_mail,
             load_event_data=self.load_event_data,
             store_event_data=self.store_event_data,
+            upload_file=self.upload_file,
+            upload_event_data=self.upload_event_data,
         )
 
         # Run
