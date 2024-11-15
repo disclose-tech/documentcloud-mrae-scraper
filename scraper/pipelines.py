@@ -98,29 +98,32 @@ class BeautifyPipeline:
                 item["title"] = item["title"][len(start) :]
 
         item["title"] = item["title"].strip()
-        item["title"] = item["title"][0].capitalize() + item["title"][1:]
+        #
 
-        correct_title_words = [
-            "avis",
-            "demande",
-            "formulaire",
-            "cerfa",
-            "décision" "annexe",
-            "cadrage",
-            "auto-évaluation",
-            "rapport",
-            "réponse",
-            "courrier",
-            "localisation",
-            "rejet",
-            "note",
-        ]
-        if not any(word in item["title"].lower() for word in correct_title_words):
+        # correct_title_words = [
+        #     "avis",
+        #     "demande",
+        #     "formulaire",
+        #     "cerfa",
+        #     "décision" "annexe",
+        #     "cadrage",
+        #     "auto-évaluation",
+        #     "rapport",
+        #     "réponse",
+        #     "courrier",
+        #     "localisation",
+        #     "rejet",
+        #     "note",
+        # ]
+        # if not any(word in item["title"].lower() for word in correct_title_words):
+
+        # If the title of the doc is only a reference, add "Avis", "Décision" etc at the start for clarity
+        if re.match(r"^[\dA-Z -_]+(bis|Bis)?( et [\dA-Z -_]+)?(pdf)?$", item["title"]):
 
             if item["category_local"] == "Avis conformes":
                 item["title"] = "Avis conforme " + item["title"]
 
-            elif item["category_local"] == "Examen au cas par cas et autres décisions":
+            elif item["category_local"] == "Examens au cas par cas et autres décisions":
                 item["title"] = "Décision " + item["title"]
 
             elif item["category_local"] in [
@@ -128,6 +131,9 @@ class BeautifyPipeline:
                 "Avis rendus sur projets",
             ]:
                 item["title"] = "Avis " + item["title"]
+
+        item["title"] = item["title"].strip()
+        item["title"] = item["title"][0].capitalize() + item["title"][1:]
 
         # Project
         if not item["project"] == "Error":
