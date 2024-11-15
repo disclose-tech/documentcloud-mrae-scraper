@@ -5,6 +5,7 @@ import re
 import os
 from urllib.parse import urlparse
 import logging
+import json
 
 from scrapy.exceptions import DropItem
 
@@ -164,7 +165,6 @@ class UploadLimitPipeline:
             return item
         else:
             spider.upload_limit_attained = True
-            print("Upload limit attained. Closing spider...")
             raise DropItem("Upload limit exceeded.")
 
 
@@ -215,31 +215,38 @@ class UploadPipeline:
         documentcloud_logger = logging.getLogger("documentcloud")
         documentcloud_logger.setLevel(logging.WARNING)
 
-        if hasattr(spider, "dry_run"):  # needed for scrapy shell to work
-            if not spider.dry_run:
-                try:
-                    spider.event_data = spider.load_event_data()
-                except Exception as e:
-                    raise Exception("Error loading event data").with_traceback(
-                        e.__traceback__
-                    )
-                    sys.exit(1)
-                else:
-                    if spider.event_data:
-                        count = len(spider.event_data)
-                    else:
-                        count = 0
-                    spider.logger.info(f"Loaded event data ({count} documents)")
-            else:
+        if not spider.dry_run:
+            try:
+                spider.logger.info("Loading event data from DocumentCloud...")
+                spider.event_data = spider.load_event_data()
+            except Exception as e:
+                raise Exception("Error loading event data").with_traceback(
+                    e.__traceback__
+                )
+                sys.exit(1)
+        else:
+            # Load from json if present
+            try:
+
+                with open("event_data.json", "r") as file:
+                    spider.logger.info("Loading event data from local JSON file...")
+                    data = json.load(file)
+                    spider.event_data = data
+            except:
                 spider.event_data = None
-                spider.logger.info(f"Not loading event data (dry run)")
-            if spider.event_data is None:
-                spider.event_data = {}
+
+        if spider.event_data:
+            spider.logger.info(
+                f"Loaded event data ({len(spider.event_data)} documents)"
+            )
+        else:
+            spider.logger.info("No event data was loaded.")
+            spider.event_data = {}
 
     def process_item(self, item, spider):
 
-        if not spider.dry_run:
-            try:
+        try:
+            if not spider.dry_run:
                 spider.client.documents.upload(
                     item["source_file_url"],
                     project=spider.target_project,
@@ -263,22 +270,25 @@ class UploadPipeline:
                         "year": str(item["year"]),
                     },
                 )
-            except Exception as e:
-                raise Exception("Upload error").with_traceback(e.__traceback__)
-            else:
-                spider.logger.debug(
-                    f"Uploaded {item['source_file_url']} to DocumentCloud"
-                )
-                # No upload error, add to event_data
-                now = datetime.datetime.now().isoformat()
-                spider.event_data[item["source_file_url"]] = {
-                    "last_modified": item["publication_lastmodified"],
-                    "last_seen": now,
-                    # "run_id": spider.run_id,
-                }
-                # # Save event data after each upload
-                if spider.run_id:  # only from the web interface
-                    spider.store_event_data(spider.event_data)
+        except Exception as e:
+            raise Exception("Upload error").with_traceback(e.__traceback__)
+        else:  # No upload error, add to event_data
+            spider.logger.debug(f"Uploaded {item['source_file_url']} to DocumentCloud")
+
+            last_modified = datetime.datetime.strptime(
+                item["publication_lastmodified"], "%a, %d %b %Y %H:%M:%S %Z"
+            ).isoformat()
+            now = datetime.datetime.now().isoformat(timespec="seconds")
+
+            spider.event_data[item["source_file_url"]] = {
+                "last_modified": last_modified,
+                "last_seen": now,
+                "target_year": spider.target_year,
+                # "run_id": spider.run_id,
+            }
+            # # Save event data after each upload
+            if spider.run_id:  # only from the web interface
+                spider.store_event_data(spider.event_data)
 
         return item
 
@@ -293,6 +303,13 @@ class UploadPipeline:
                 count = 0
 
             spider.logger.info(f"Uploaded event data ({count} documents)")
+
+        if not spider.run_id:
+            with open("event_data.json", "w") as file:
+                json.dump(spider.event_data, file)
+                spider.logger.info(
+                    f"Saved file event_data.json ({len(spider.event_data)} documents)"
+                )
 
 
 class MailPipeline:

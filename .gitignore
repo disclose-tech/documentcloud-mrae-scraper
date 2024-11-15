@@ -131,8 +131,6 @@ dmypy.json
 # Custom
 __pycache__/
 data.csv
-data_2022.csv
-data_2023.csv
-data_2024.csv
+data_*.csv
 scrapy.log
-data.csv
+event_data.json
