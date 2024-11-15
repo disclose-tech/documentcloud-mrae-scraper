@@ -13,7 +13,6 @@ class DocumentItem(Item):
     access = Field()
 
     authority = Field()
-    # region = Field()
 
     category = Field()
     category_local = Field()
@@ -26,23 +25,11 @@ class DocumentItem(Item):
     publication_date = Field()
     publication_time = Field()
     publication_datetime = Field()
-    # publication_timestamp = Field()
-    # publication_year = Field()
-    # publication_month = Field()
-    # publication_day = Field()
     publication_lastmodified = Field()
 
     full_info = Field()
 
     year = Field()
-    # decision_date_string = Field()
-    # decision_date_line = Field()
-    # decision_date = Field()
-    # decision_year = Field()
-    # decision_month = Field()
-    # decision_day = Field()
-
-    # petitioner = Field()
 
     headers = Field()
 
