@@ -10,6 +10,7 @@ import json
 from scrapy.exceptions import DropItem
 
 from .corrections import corrections
+from .log import SilentDropItem
 
 
 class ParseDatePipeline:
@@ -165,7 +166,7 @@ class UploadLimitPipeline:
             return item
         else:
             spider.upload_limit_attained = True
-            raise DropItem("Upload limit exceeded.")
+            raise SilentDropItem("Upload limit exceeded.")
 
 
 class CorrectionsPipeline:
