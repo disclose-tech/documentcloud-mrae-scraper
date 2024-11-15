@@ -10,7 +10,8 @@ from ..items import DocumentItem
 DOCUMENT_CATEGORIES = [
     "Avis rendus sur projets",
     "Avis rendus sur plans et programmes",
-    "Examen au cas par cas et autres décisions",
+    "Examens au cas par cas et autres décisions",
+    # "Décisions après examens au cas par cas et autres décisions",
     "Avis conformes",
 ]
 
@@ -70,12 +71,6 @@ class MRAESpider(scrapy.Spider):
                 category_name = cat.css(".lien-sous-rubrique::text").get()
                 category_link = cat.css(".lien-sous-rubrique").attrib["href"]
 
-                if (
-                    category_name
-                    == "Décisions après examens au cas par cas et autres décisions"
-                ):
-                    category_name = "Examen au cas par cas et autres décisions"
-
                 if category_name in DOCUMENT_CATEGORIES:
 
                     yield response.follow(
@@ -83,6 +78,8 @@ class MRAESpider(scrapy.Spider):
                         callback=self.parse_category_page,
                         cb_kwargs=dict(region=region, category_local=category_name),
                     )
+                else:
+                    self.logger.debug(f"Category discarded: {category_name}")
 
     def parse_category_page(self, response, region, category_local):
         """Find links to pages containing the files."""

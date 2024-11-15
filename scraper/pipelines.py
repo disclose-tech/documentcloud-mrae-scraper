@@ -47,7 +47,7 @@ class CategoryPipeline:
         elif item["category_local"] == "Avis conformes":
             item["category"] = "Cas par cas"
 
-        elif item["category_local"] == "Examen au cas par cas et autres décisions":
+        elif "cas par cas" in item["category_local"].lower():
             item["category"] = "Cas par cas"
 
         elif item["category_local"] in [
