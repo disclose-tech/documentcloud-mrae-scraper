@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import re
 import sys
 
@@ -27,6 +27,23 @@ class MRAESpider(scrapy.Spider):
 
     upload_limit_attained = False
 
+    start_time = datetime.now()
+
+    def check_time_limit(self):
+        """Closes the spider automatically if it reaches a specified duration"""
+
+        # self.logger.info(f"Checking time limit ({self.time_limit} min)")
+
+        if self.time_limit != 0:
+
+            limit = self.time_limit * 60
+            now = datetime.now()
+
+            if timedelta.total_seconds(now - self.start_time) > limit:
+                raise CloseSpider(
+                    f"Closed due to time limit ({self.time_limit} minutes)"
+                )
+
     def check_upload_limit(self):
         """Closes the spider if the upload limit is attained."""
         if self.upload_limit_attained:
@@ -34,8 +51,6 @@ class MRAESpider(scrapy.Spider):
 
     def parse(self, response):
         """Find links to regional authorities."""
-
-        self.check_upload_limit()
 
         sections = response.css(
             "#contenu .liste-rubriques .rubrique_avec_sous-rubriques"
@@ -114,6 +129,9 @@ class MRAESpider(scrapy.Spider):
                     return True
                 else:
                     return False
+
+        self.check_upload_limit()
+        self.check_time_limit()
 
         self.logger.info(f"Scraping {region} / {category_local} {self.target_year}")
 
@@ -228,6 +246,7 @@ class MRAESpider(scrapy.Spider):
         # Main fuction
 
         self.check_upload_limit()
+        self.check_time_limit()
 
         filecards = response.css(".fr-download--card")
 
@@ -318,6 +337,7 @@ class MRAESpider(scrapy.Spider):
         """Gets the headers of a document to extract its publication date (Last-Modified header)."""
 
         self.check_upload_limit()
+        self.check_time_limit()
 
         # Use Last-Modified header as date for the document
         # Note: this is UTC
@@ -326,6 +346,6 @@ class MRAESpider(scrapy.Spider):
 
         doc_item["publication_lastmodified"] = last_modified
 
-        dt = datetime.datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
+        dt = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S %Z")
 
         yield doc_item
