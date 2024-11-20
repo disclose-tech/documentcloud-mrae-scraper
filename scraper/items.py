@@ -34,3 +34,6 @@ class DocumentItem(Item):
     headers = Field()
 
     error = Field()
+
+    departments = Field()
+    departments_sources = Field()

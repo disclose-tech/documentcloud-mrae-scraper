@@ -75,6 +75,7 @@ ITEM_PIPELINES = {
     "scraper.pipelines.BeautifyPipeline": 400,
     "scraper.pipelines.UploadLimitPipeline": 500,
     "scraper.pipelines.CorrectionsPipeline": 600,
+    "scraper.pipelines.TagDepartmentsPipeline": 650,
     "scraper.pipelines.HandleErrorsPipeline": 700,
     "scraper.pipelines.UploadPipeline": 800,
     "scraper.pipelines.MailPipeline": 900,
