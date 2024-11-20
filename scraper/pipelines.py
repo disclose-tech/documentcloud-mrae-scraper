@@ -98,24 +98,6 @@ class BeautifyPipeline:
                 item["title"] = item["title"][len(start) :]
 
         item["title"] = item["title"].strip()
-        #
-
-        # correct_title_words = [
-        #     "avis",
-        #     "demande",
-        #     "formulaire",
-        #     "cerfa",
-        #     "décision" "annexe",
-        #     "cadrage",
-        #     "auto-évaluation",
-        #     "rapport",
-        #     "réponse",
-        #     "courrier",
-        #     "localisation",
-        #     "rejet",
-        #     "note",
-        # ]
-        # if not any(word in item["title"].lower() for word in correct_title_words):
 
         # If the title of the doc is only a reference, add "Avis", "Décision" etc at the start for clarity
         if re.match(r"^[\dA-Z -_]+(bis|Bis)?( et [\dA-Z -_]+)?(pdf)?$", item["title"]):
@@ -155,6 +137,13 @@ class BeautifyPipeline:
             item["project"] = item["project"].strip()
             item["project"] = item["project"].rstrip(".}")
             item["project"] = item["project"][0].capitalize() + item["project"][1:]
+
+            # Add missing parenthesis at the end
+            item["project"] = re.sub(
+                r"\(([02][1-9]|2[AB]|[1345678][0-9]|9[012345]|97[1-8])$",
+                r"(\1)",
+                item["project"],
+            )
 
         return item
 
