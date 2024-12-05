@@ -77,6 +77,7 @@ ITEM_PIPELINES = {
     "scraper.pipelines.CorrectionsPipeline": 600,
     "scraper.pipelines.TagDepartmentsPipeline": 650,
     "scraper.pipelines.HandleErrorsPipeline": 700,
+    "scraper.pipelines.ProjectIDPipeline": 750,
     "scraper.pipelines.UploadPipeline": 800,
     "scraper.pipelines.MailPipeline": 900,
 }
@@ -114,9 +115,9 @@ RETRY_TIMES = 4
 
 # Development settings
 AUTOTHROTTLE_DEBUG = False
-HTTPCACHE_ENABLED = False
+HTTPCACHE_ENABLED = True
 HTTPCACHE_IGNORE_HTTP_CODES = [503]
-HTTPCACHE_EXPIRATION_SECS = 86400  # 1 day
+HTTPCACHE_EXPIRATION_SECS = 86400 * 100  # 1 day
 DEPTH_STATS_VERBOSE = False
 LOG_LEVEL = "INFO"
 FEEDS = {
