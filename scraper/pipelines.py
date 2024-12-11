@@ -28,12 +28,14 @@ class ParseDatePipeline:
             item["publication_lastmodified"], "%a, %d %b %Y %H:%M:%S %Z"
         )
 
-        # item["publication_timestamp"] = publication_dt.isoformat() + "Z"
-
         item["publication_date"] = publication_dt.strftime("%Y-%m-%d")
         item["publication_time"] = publication_dt.strftime("%H:%M:%S UTC")
         item["publication_datetime"] = (
             item["publication_date"] + " " + item["publication_time"]
+        )
+
+        item["publication_datetime_dcformat"] = (
+            publication_dt.isoformat(timespec="microseconds") + "Z"
         )
 
         return item
@@ -311,6 +313,7 @@ class UploadPipeline:
                     title=item["title"],
                     description=item["project"],
                     source=item["source"],
+                    publish_at=item["publication_datetime_dcformat"],
                     language="fra",
                     access=item["access"],
                     data=data,

@@ -27,6 +27,7 @@ class DocumentItem(Item):
     publication_time = Field()
     publication_datetime = Field()
     publication_lastmodified = Field()
+    publication_datetime_dcformat = Field()
 
     full_info = Field()
 
