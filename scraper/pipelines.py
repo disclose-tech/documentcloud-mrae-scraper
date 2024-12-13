@@ -150,6 +150,10 @@ class BeautifyPipeline:
                 item["project"],
             )
 
+        # Authority
+
+        item["authority"] = item["authority"].replace("’", "'")
+
         return item
 
 
