@@ -212,7 +212,7 @@ class TagDepartmentsPipeline:
 
 
 class HandleErrorsPipeline:
-    """Pass docs with errors to private"""
+    """Mark docs with error"""
 
     def process_item(self, item, spider):
 
@@ -227,10 +227,8 @@ class HandleErrorsPipeline:
             # or item["decision_date"][:4] != str(spider.target_year)
         ):
             item["error"] = True
-            item["access"] = "private"
         else:
             item["error"] = False
-            item["access"] = spider.access_level
 
         return item
 
@@ -309,6 +307,9 @@ class UploadPipeline:
             data["departments"] = item["departments"]
             data["departments_sources"] = item["departments_sources"]
 
+        if item["error"]:
+            data["_tag"] = "hidden"
+
         try:
             if not spider.dry_run:
                 spider.client.documents.upload(
@@ -319,7 +320,7 @@ class UploadPipeline:
                     source=item["source"],
                     publish_at=item["publication_datetime_dcformat"],
                     language="fra",
-                    access=item["access"],
+                    access=spider.access_level,
                     data=data,
                 )
         except Exception as e:
