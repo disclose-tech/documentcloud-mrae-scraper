@@ -84,7 +84,7 @@ class MRAESpider(scrapy.Spider):
     def parse_category_page(self, response, region, category_local):
         """Find links to pages containing the files."""
 
-        def year_check(string, target_year):
+        def year_check(string, target_years):
             """Check if the page needs to be crawled. Input string is the link's text"""
 
             years_matches = re.findall(r"20\d\d", string)
@@ -94,13 +94,14 @@ class MRAESpider(scrapy.Spider):
                 return True
 
             elif len(years_matches) == 1:
-                if int(years_matches[0]) == target_year:
+                if int(years_matches[0]) in target_years:
                     return True
                 else:
                     return False
 
             elif len(years_matches) == 2:
-                if target_year in [int(x) for x in years_matches]:
+                # if target_year in [int(x) for x in years_matches]:
+                if any([ty in [int(x) for x in years_matches] for ty in target_years]):
                     return True
                 else:
                     range_match = re.search(
@@ -114,7 +115,7 @@ class MRAESpider(scrapy.Spider):
                             years_range_list[0], years_range_list[1] + 1
                         )
 
-                        if target_year in years_range:
+                        if any([ty in years_range for ty in target_years]):
                             return True
                         else:  # not in range
                             return False
@@ -122,7 +123,9 @@ class MRAESpider(scrapy.Spider):
                         return False
 
             else:  # more than 2 years in page name
-                if target_year in [int(x) for x in years_matches]:
+                # if target_year in [int(x) for x in years_matches]:
+                if any([ty in [int(x) for x in years_matches] for ty in target_years]):
+
                     return True
                 else:
                     return False
@@ -130,7 +133,7 @@ class MRAESpider(scrapy.Spider):
         self.check_upload_limit()
         self.check_time_limit()
 
-        self.logger.info(f"Scraping {region} / {category_local} {self.target_year}")
+        self.logger.info(f"Scraping {region} / {category_local}")
 
         cards_list = response.css(".liste-articles .fr-card__body")
 
@@ -138,7 +141,7 @@ class MRAESpider(scrapy.Spider):
             link_text = card.css(".fr-card__title a::text").get()
             link_href = card.css(".fr-card__title a").attrib["href"]
 
-            if year_check(link_text, target_year=self.target_year):
+            if year_check(link_text, target_years=self.target_years):
                 yield response.follow(
                     link_href,
                     callback=self.parse_documents_page,
@@ -240,10 +243,34 @@ class MRAESpider(scrapy.Spider):
 
             return full_info
 
+        def get_matched_year(page):
+
+            if len(re.findall(r"20\d\d", page)) != 1:  # multi-year page
+                previous_h2 = (
+                    parent.xpath("./preceding-sibling::h2")[-1].css("::text").get()
+                )
+
+                for ty in self.target_years:
+                    if str(ty) in previous_h2:
+                        matched_year = ty
+                        break
+                    else:
+                        matched_year = None
+                        self.logger.debug(
+                            f"Discarded item on multi-year page: {doc_item['title']} | {doc_item['source_page_url']}"
+                        )
+            else:
+                matched_year = int(re.findall(r"20\d\d", page)[0])
+
+            return matched_year
+
         # Main fuction
 
         self.check_upload_limit()
         self.check_time_limit()
+
+        page_title = response.css("head title::text").get().split("|")[0].strip()
+        self.logger.info(f'Scraping page "{page_title}"')
 
         filecards = response.css(".fr-download--card")
 
@@ -301,28 +328,14 @@ class MRAESpider(scrapy.Spider):
                     source="www.mrae.developpement-durable.gouv.fr",
                 )
 
-                # Check if the doc matches the target year
-                if len(re.findall(r"20\d\d", page)) != 1:  # multi-year page
-                    previous_h2 = (
-                        parent.xpath("./preceding-sibling::h2")[-1].css("::text").get()
-                    )
+                # check years match & event data
 
-                    if str(self.target_year) in previous_h2:
-                        target_year_match = True
-                    else:
-                        target_year_match = False
-                        self.logger.debug(
-                            f"Discarded item on multi-year page: {doc_item['title']} | {doc_item['source_page_url']}"
-                        )
-                else:
-                    target_year_match = True
+                matched_year = get_matched_year(page)
 
-                if (
-                    target_year_match
-                    and not doc_item["source_file_url"] in self.event_data
-                ):
+                if matched_year and not doc_item["source_file_url"] in self.event_data:
 
-                    doc_item["year"] = self.target_year
+                    doc_item["year"] = matched_year
+
                     yield response.follow(
                         doc_link,
                         method="HEAD",

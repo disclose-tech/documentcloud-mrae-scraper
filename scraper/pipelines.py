@@ -216,16 +216,7 @@ class HandleErrorsPipeline:
 
     def process_item(self, item, spider):
 
-        if (
-            item["project"].lower()
-            == "error"
-            # or item["petitioner"].lower() == "error"
-            # or item["petitioner"].startswith("Commune (")  # Missing name of commune
-            # or item["petitioner"].startswith("Nom du pétitionnaire")
-            # or item["decision_date_string"].lower() == "error"
-            # or item["decision_date"].lower() == "error"
-            # or item["decision_date"][:4] != str(spider.target_year)
-        ):
+        if item["project"].lower() == "error":
             item["error"] = True
         else:
             item["error"] = False
@@ -291,7 +282,7 @@ class UploadPipeline:
             "category": item["category"],
             "category_local": item["category_local"],
             "event_data_key": item["source_file_url"],
-            "source_scraper": f"MRAe Scraper {spider.target_year}",
+            "source_scraper": f"MRAe Scraper {spider.target_years[0]}-{spider.target_years[-1]}",
             "source_file_url": item["source_file_url"],
             "source_filename": item["source_filename"],
             "source_page_url": item["source_page_url"],
@@ -336,7 +327,7 @@ class UploadPipeline:
             spider.event_data[item["source_file_url"]] = {
                 "last_modified": last_modified,
                 "last_seen": now,
-                "target_year": spider.target_year,
+                "target_year": item["year"],
                 # "run_id": spider.run_id,
             }
             # # Save event data after each upload
@@ -410,7 +401,7 @@ class MailPipeline:
 
             return item_string
 
-        subject = f"MRAe Scraper {str(spider.target_year)} (Errors: {len(self.items_with_error)} | New: {len(self.items_ok)}) [{spider.run_name}]"
+        subject = f"MRAe Scraper {str(spider.target_years[0])}-{str(spider.target_years[-1])} (Errors: {len(self.items_with_error)} | New: {len(self.items_ok)}) [{spider.run_name}]"
 
         errors_content = f"ERRORS ({len(self.items_with_error)})\n\n" + "\n\n".join(
             [print_item(item, error=True) for item in self.items_with_error]

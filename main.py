@@ -85,9 +85,15 @@ class DiscloseMRAEScraper(AddOn):
         self.access_level = self.data["access_level"]
         self.check_access_level()
 
-        self.target_year = self.data.get(
-            "target_year", datetime.date.today().year
+        self.from_year = self.data.get(
+            "from_year", datetime.date.today().year
         )  # current year if not set
+
+        self.to_year = self.data.get(
+            "to_year", datetime.date.today().year
+        )  # current year if not set
+
+        self.target_years = range(self.from_year, self.to_year + 1)
 
         self.upload_limit = self.data.get("upload_limit", 0)
         self.time_limit = self.data.get(
@@ -120,7 +126,7 @@ class DiscloseMRAEScraper(AddOn):
 
         process.crawl(
             MRAESpider,
-            target_year=self.target_year,
+            target_years=self.target_years,
             upload_limit=self.upload_limit,
             time_limit=self.time_limit,
             client=self.client,
@@ -139,7 +145,7 @@ class DiscloseMRAEScraper(AddOn):
         # Run
 
         self.set_message(
-            f"Scraping MRAE documents {str(self.target_year)} [{self.run_name}]"
+            f"Scraping MRAE documents {str(self.target_years[0])}-{str(self.target_years[-1])} [{self.run_name}]"
         )
         process.start()
         self.set_message("Scraping complete!")
