@@ -294,7 +294,7 @@ class MRAESpider(scrapy.Spider):
                         self.logger.warning(
                             f"Could not find projectbox for doc {doc_name} on {response.request.url}"
                         )
-                        yield
+                        continue
 
                 else:
                     projectbox = parent
