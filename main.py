@@ -144,9 +144,12 @@ class DiscloseMRAEScraper(AddOn):
 
         # Run
 
-        self.set_message(
-            f"Scraping MRAE documents {str(self.target_years[0])}-{str(self.target_years[-1])} [{self.run_name}]"
-        )
+        if len(self.target_years) == 1:
+            year_range_str = str(self.target_years[0])
+        else:
+            year_range_str = f"{str(self.target_years[0])}-{str(self.target_years[-1])}"
+
+        self.set_message(f"Scraping MRAE documents {year_range_str} [{self.run_name}]")
         process.start()
         self.set_message("Scraping complete!")
 

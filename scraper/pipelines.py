@@ -421,7 +421,12 @@ class MailPipeline(SpiderPipeline):
 
             return item_string
 
-        subject = f"MRAe Scraper {str(self.spider.target_years[0])}-{str(self.spider.target_years[-1])} (Errors: {len(self.items_with_error)} | New: {len(self.items_ok)}) [{self.spider.run_name}]"
+        if len(self.spider.target_years) == 1:
+            year_range_str = str(self.spider.target_years[0])
+        else:
+            year_range_str = f"{str(self.spider.target_years[0])}-{str(self.spider.target_years[-1])}"
+
+        subject = f"MRAe Scraper {year_range_str} (Errors: {len(self.items_with_error)} | New: {len(self.items_ok)}) [{self.spider.run_name}]"
 
         errors_content = f"ERRORS ({len(self.items_with_error)})\n\n" + "\n\n".join(
             [print_item(item, error=True) for item in self.items_with_error]
