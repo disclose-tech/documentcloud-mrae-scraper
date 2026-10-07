@@ -45,6 +45,10 @@ class MRAESpider(scrapy.Spider):
                     f"Closed due to time limit ({self.time_limit} minutes)"
                 )
 
+    def is_known(self, url):
+        """Whether the document was already uploaded (archived or live event data)."""
+        return url in self.archived_event_data or url in self.event_data
+
     def check_upload_limit(self):
         """Closes the spider if the upload limit is attained."""
         if self.upload_limit_attained:
@@ -332,7 +336,7 @@ class MRAESpider(scrapy.Spider):
 
                 matched_year = get_matched_year(page)
 
-                if matched_year and not doc_item["source_file_url"] in self.event_data:
+                if matched_year and not self.is_known(doc_item["source_file_url"]):
 
                     doc_item["year"] = matched_year
 
